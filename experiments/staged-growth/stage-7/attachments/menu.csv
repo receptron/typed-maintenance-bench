@@ -1,0 +1,4 @@
+order_id,customer_id,order_date,sku,quantity,unit_price
+1,K1,2026-03-02,B-02,1,3.00
+2,K1,2026-03-02,ＳＥＴ-01,1,12.00
+3,K2,2026-03-03,🍣-01,2,8.00

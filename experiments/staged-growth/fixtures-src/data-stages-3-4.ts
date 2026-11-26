@@ -9,7 +9,7 @@ const S4V = "stage-4/visible-tests/fixtures/";
 
 // Line 8 duplicates line 2 on a later date, so it stays a duplicate when --from excludes line 2.
 // SKUs A and A-1 order differently component by component than joined with a separator above "-".
-const ORDERS_CSV = [
+export const ORDERS_CSV = [
   HEADER,
   "1,C1,2026-03-01,A-1,2,10.00,,",
   "2,C2,2026-03-01,B|x,1,5.50,0.10,",
@@ -26,7 +26,7 @@ const ORDERS_CSV = [
 
 const COLUMNS = HEADER.split(",");
 
-const ORDERS_JSON = `${JSON.stringify(
+export const ORDERS_JSON = `${JSON.stringify(
   [
     ["1", "C1", "2026-03-01", "A-1", "2", "10.00", "", ""],
     ["2", "C2", "2026-03-01", "B|x", "1", "5.50", "0.10", ""],

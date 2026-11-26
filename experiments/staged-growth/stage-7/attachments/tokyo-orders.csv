@@ -1,0 +1,2 @@
+order_id,customer_id,order_date,sku,quantity,unit_price,currency
+1,T1,2026-03-02T00:30:00+09:00,A,1,9.00,

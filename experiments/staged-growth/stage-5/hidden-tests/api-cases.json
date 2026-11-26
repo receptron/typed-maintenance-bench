@@ -1,0 +1,1222 @@
+{
+  "cases": [
+    {
+      "id": "s5-api-register-returns",
+      "description": "registerFormat returns undefined",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": [
+            ".pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "returns": {
+          "$undefined": true
+        }
+      }
+    },
+    {
+      "id": "s5-api-plugin-read",
+      "description": "Records from a plugin follow every rule",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.pipe"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "P1",
+              "orderDate": "2026-03-01",
+              "sku": "A",
+              "quantity": 2,
+              "unitPriceCents": 100,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "P1",
+              "orderDate": "2026-03-02",
+              "sku": "B",
+              "quantity": 1,
+              "unitPriceCents": 250,
+              "discountPercent": 20,
+              "notes": "x"
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders.pipe",
+              "location": "4",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.pipe",
+              "location": "5",
+              "reason": "too few fields"
+            },
+            {
+              "file": "orders.pipe",
+              "location": "6",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s5-api-plugin-format",
+      "description": "A plugin chosen by name",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.txt",
+          "format": "pipe"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "P1",
+              "orderDate": "2026-03-01",
+              "sku": "A",
+              "quantity": 2,
+              "unitPriceCents": 100,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "P1",
+              "orderDate": "2026-03-02",
+              "sku": "B",
+              "quantity": 1,
+              "unitPriceCents": 250,
+              "discountPercent": 20,
+              "notes": "x"
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders.txt",
+              "location": "4",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.txt",
+              "location": "5",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.txt",
+              "location": "6",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s5-api-plugin-extension-case",
+      "description": "A plugin extension matches ignoring case",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "upper.PIPE"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "P1",
+              "orderDate": "2026-03-01",
+              "sku": "A",
+              "quantity": 2,
+              "unitPriceCents": 100,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "P1",
+              "orderDate": "2026-03-02",
+              "sku": "B",
+              "quantity": 1,
+              "unitPriceCents": 250,
+              "discountPercent": 20,
+              "notes": "x"
+            }
+          ],
+          "warnings": [
+            {
+              "file": "upper.PIPE",
+              "location": "4",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "upper.PIPE",
+              "location": "5",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "upper.PIPE",
+              "location": "6",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s5-api-plugin-bom",
+      "description": "parse gets the text without its byte-order mark",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "bom.pipe"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "P1",
+              "orderDate": "2026-03-01",
+              "sku": "A",
+              "quantity": 2,
+              "unitPriceCents": 100,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "P1",
+              "orderDate": "2026-03-02",
+              "sku": "B",
+              "quantity": 1,
+              "unitPriceCents": 250,
+              "discountPercent": 20,
+              "notes": "x"
+            }
+          ],
+          "warnings": [
+            {
+              "file": "bom.pipe",
+              "location": "4",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "bom.pipe",
+              "location": "5",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "bom.pipe",
+              "location": "6",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s5-api-plugin-no-extensions",
+      "description": "A plugin with no extensions, chosen by name",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "noext",
+              "extensions": [],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.pipe",
+          "format": "noext"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "P1",
+              "orderDate": "2026-03-01",
+              "sku": "A",
+              "quantity": 2,
+              "unitPriceCents": 100,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "P1",
+              "orderDate": "2026-03-02",
+              "sku": "B",
+              "quantity": 1,
+              "unitPriceCents": 250,
+              "discountPercent": 20,
+              "notes": "x"
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders.pipe",
+              "location": "4",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.pipe",
+              "location": "5",
+              "reason": "too few fields"
+            },
+            {
+              "file": "orders.pipe",
+              "location": "6",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s5-api-plugin-typed",
+      "description": "Plugin values follow the typed-format rules",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "typed",
+              "extensions": [
+                ".typed"
+              ],
+              "parse": {
+                "$plugin": "typed"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "any.typed"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "T1",
+              "orderDate": "2026-03-01",
+              "sku": "T",
+              "quantity": 2,
+              "unitPriceCents": 150,
+              "discountPercent": 0,
+              "notes": "5"
+            },
+            {
+              "orderId": "4",
+              "customerId": "T3",
+              "orderDate": "2026-03-03",
+              "sku": "U",
+              "quantity": 3,
+              "unitPriceCents": 50,
+              "discountPercent": 0,
+              "notes": ""
+            }
+          ],
+          "warnings": [
+            {
+              "file": "any.typed",
+              "location": "b",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "any.typed",
+              "location": "c",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "any.typed",
+              "location": "d",
+              "reason": "rejected by the plugin"
+            },
+            {
+              "file": "any.typed",
+              "location": "e",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "any.typed",
+              "location": "f",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s5-api-plugin-pipeline",
+      "description": "A plugin format through aggregate and render",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "pipeline",
+      "args": [
+        {
+          "path": "orders.pipe"
+        },
+        {
+          "groupBy": [
+            "customer"
+          ]
+        },
+        "text"
+      ],
+      "expect": {
+        "returns": "customer\trevenue\nP1\t4.00\nTOTAL\t4.00\n"
+      }
+    },
+    {
+      "id": "s5-api-plugin-throws",
+      "description": "parse throws",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "typed",
+              "extensions": [
+                ".typed"
+              ],
+              "parse": {
+                "$plugin": "throws"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "any.typed"
+        }
+      ],
+      "expect": {
+        "throws": "ReadError"
+      }
+    },
+    {
+      "id": "s5-api-plugin-bad-return",
+      "description": "parse returns something other than an array",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "typed",
+              "extensions": [
+                ".typed"
+              ],
+              "parse": {
+                "$plugin": "bad-return"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "any.typed"
+        }
+      ],
+      "expect": {
+        "throws": "ReadError"
+      }
+    },
+    {
+      "id": "s5-api-plugin-bad-entry",
+      "description": "parse returns an entry of the wrong shape",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "typed",
+              "extensions": [
+                ".typed"
+              ],
+              "parse": {
+                "$plugin": "bad-entry"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "any.typed"
+        }
+      ],
+      "expect": {
+        "throws": "ReadError"
+      }
+    },
+    {
+      "id": "s5-api-plugin-latin1",
+      "description": "A plugin file that is not UTF-8",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "latin1.pipe"
+        }
+      ],
+      "expect": {
+        "throws": "ReadError"
+      }
+    },
+    {
+      "id": "s5-api-plugin-missing-file",
+      "description": "A plugin file that cannot be read",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "missing.pipe"
+        }
+      ],
+      "expect": {
+        "throws": "ReadError"
+      }
+    },
+    {
+      "id": "s5-api-unregistered-extension",
+      "description": "An extension nobody registered",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.pipe"
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-unregistered-format",
+      "description": "A format nobody registered",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.pipe",
+          "format": "pipe"
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-tsv-read",
+      "description": "TSV through read",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.tsv"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "C1",
+              "orderDate": "2026-12-28",
+              "sku": "A",
+              "quantity": 2,
+              "unitPriceCents": 1000,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "C2",
+              "orderDate": "2026-12-31",
+              "sku": "\"B\"",
+              "quantity": 1,
+              "unitPriceCents": 550,
+              "discountPercent": 10,
+              "notes": ""
+            },
+            {
+              "orderId": "3",
+              "customerId": "C1",
+              "orderDate": "2027-01-01",
+              "sku": "A",
+              "quantity": 3,
+              "unitPriceCents": 125,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "4",
+              "customerId": "C/3",
+              "orderDate": "2027-01-03",
+              "sku": "A",
+              "quantity": 1,
+              "unitPriceCents": 700,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "5",
+              "customerId": "C2",
+              "orderDate": "2027-01-04",
+              "sku": "B",
+              "quantity": 1,
+              "unitPriceCents": 99,
+              "discountPercent": 50,
+              "notes": ""
+            },
+            {
+              "orderId": "6",
+              "customerId": "C1",
+              "orderDate": "2026-12-27",
+              "sku": "A",
+              "quantity": 4,
+              "unitPriceCents": 250,
+              "discountPercent": 0,
+              "notes": "note"
+            },
+            {
+              "orderId": "9",
+              "customerId": "C.1",
+              "orderDate": "2027-01-10",
+              "sku": "X",
+              "quantity": 1,
+              "unitPriceCents": 100,
+              "discountPercent": 0,
+              "notes": ""
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders.tsv",
+              "location": "9",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.tsv",
+              "location": "10",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.tsv",
+              "location": "11",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s5-api-tsv-missing-column",
+      "description": "TSV with a missing column",
+      "call": "read",
+      "args": [
+        {
+          "path": "missing-column.tsv"
+        }
+      ],
+      "expect": {
+        "throws": "ReadError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-string",
+      "description": "plugin is not an object",
+      "call": "registerFormat",
+      "args": [
+        "pipe"
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-no-parse",
+      "description": "parse is missing",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": [
+            ".pipe"
+          ]
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-parse",
+      "description": "parse is not a function",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": [
+            ".pipe"
+          ],
+          "parse": "split"
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-builtin-name",
+      "description": "The name of a built-in format",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "csv",
+          "extensions": [
+            ".pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-tsv-name",
+      "description": "TSV is already registered",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "tsv",
+          "extensions": [
+            ".pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-uppercase-name",
+      "description": "A name with uppercase letters",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "Pipe",
+          "extensions": [
+            ".pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-digit-name",
+      "description": "A name starting with a digit",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "1pipe",
+          "extensions": [
+            ".pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-empty-name",
+      "description": "An empty name",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "",
+          "extensions": [
+            ".pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-extensions",
+      "description": "extensions is not an array",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": ".pipe",
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-no-dot",
+      "description": "An extension without a dot",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": [
+            "pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-uppercase-extension",
+      "description": "An extension with uppercase letters",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": [
+            ".PIPE"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-taken-extension",
+      "description": "An extension of a built-in format",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": [
+            ".yml"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-tsv-extension",
+      "description": "The TSV extension",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": [
+            ".tsv"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-repeated-extension",
+      "description": "The same extension twice",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": [
+            ".pipe",
+            ".pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-extra",
+      "description": "A property not in the contract",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": [
+            ".pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          },
+          "description": "pipes"
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-twice",
+      "description": "The same name twice",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": [],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-type-extension-twice",
+      "description": "An extension another plugin has",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe2",
+          "extensions": [
+            ".pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-failed-registers-nothing",
+      "description": "A rejected plugin is not registered",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe",
+                "bad"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ],
+          "throws": true
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.pipe"
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s5-api-register-after-failure",
+      "description": "A rejected plugin leaves its name free",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe",
+                "bad"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ],
+          "throws": true
+        }
+      ],
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "pipe",
+          "extensions": [
+            ".pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "returns": {
+          "$undefined": true
+        }
+      }
+    }
+  ]
+}

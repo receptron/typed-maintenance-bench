@@ -57,9 +57,11 @@ export const runApiCase = (entry: string, testCase: ApiCase, fixturesDir: string
   return observation ?? { kind: "crashed", detail: detail.slice(0, MAX_DETAIL_CHARS) };
 };
 
-export const runApiCaseDir = (entry: string, casesDir: string): Verdict[] => {
+export const runApiCaseDir = (entry: string, casesDir: string, skip: ReadonlySet<string> = new Set()): Verdict[] => {
   const fixturesDir = path.join(casesDir, "fixtures");
-  return loadApiCases(casesDir).map((testCase) => judgeApi(testCase, runApiCase(entry, testCase, fixturesDir)));
+  return loadApiCases(casesDir)
+    .filter((testCase) => !skip.has(testCase.id))
+    .map((testCase) => judgeApi(testCase, runApiCase(entry, testCase, fixturesDir)));
 };
 
 export const loadLibraryEntry = (treeRoot: string): string => {

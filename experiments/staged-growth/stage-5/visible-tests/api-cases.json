@@ -1,0 +1,96 @@
+{
+  "cases": [
+    {
+      "id": "s5-visible-api-plugin-read",
+      "description": "Records from a plugin follow every rule",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.pipe"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "P1",
+              "orderDate": "2026-03-01",
+              "sku": "A",
+              "quantity": 2,
+              "unitPriceCents": 100,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "P1",
+              "orderDate": "2026-03-02",
+              "sku": "B",
+              "quantity": 1,
+              "unitPriceCents": 250,
+              "discountPercent": 20,
+              "notes": "x"
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders.pipe",
+              "location": "4",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.pipe",
+              "location": "5",
+              "reason": "too few fields"
+            },
+            {
+              "file": "orders.pipe",
+              "location": "6",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s5-visible-api-register-type-builtin-name",
+      "description": "The name of a built-in format",
+      "call": "registerFormat",
+      "args": [
+        {
+          "name": "csv",
+          "extensions": [
+            ".pipe"
+          ],
+          "parse": {
+            "$plugin": "pipe"
+          }
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    }
+  ]
+}

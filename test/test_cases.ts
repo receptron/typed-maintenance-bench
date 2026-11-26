@@ -45,6 +45,25 @@ describe("judge", () => {
   });
 });
 
+describe("judge with expected files", () => {
+  const files = { dir: "out", contents: { "a.txt": "1\n", "b/c.txt": "2\n" } };
+  const withFiles = baseCase({ exitCode: 0, files });
+  it("passes when the directory holds exactly the expected files", () => {
+    assert.equal(judge(withFiles, observed({ files: { "b/c.txt": "2\n", "a.txt": "1\n" } })).passed, true);
+  });
+  it("names a missing, an unexpected and a different file", () => {
+    const verdict = judge(withFiles, observed({ files: { "a.txt": "x\n", "d.txt": "" } }));
+    assert.deepEqual(
+      verdict.failures.map((failure) => failure.split("\n")[0]),
+      ["out/a.txt differs", "missing file out/b/c.txt", "unexpected file out/d.txt"],
+    );
+  });
+  it("treats an absent directory as holding no files", () => {
+    assert.equal(judge(baseCase({ exitCode: 0, files: { dir: "out", contents: {} } }), observed()).passed, true);
+    assert.equal(judge(withFiles, observed()).passed, false);
+  });
+});
+
 describe("isCaseFile", () => {
   it("accepts a minimal case file", () => {
     assert.equal(isCaseFile({ cases: [baseCase({ exitCode: 0 })] }), true);
@@ -59,6 +78,14 @@ describe("isCaseFile", () => {
       { cases: [{ ...baseCase({ exitCode: 0 }), env: { TZ: 1 } }] },
     ].forEach((value) => assert.equal(isCaseFile(value), false, JSON.stringify(value)));
     assert.equal(isCaseFile({ cases: [{ ...baseCase({ exitCode: 0 }), args: [1] }] }), false);
+    assert.equal(isCaseFile({ cases: [{ ...baseCase({ exitCode: 0 }), tool: "report" }] }), true);
+    assert.equal(isCaseFile({ cases: [{ ...baseCase({ exitCode: 0 }), tool: "mailer" }] }), false);
+    assert.equal(
+      isCaseFile({
+        cases: [{ ...baseCase({ exitCode: 0 }), expect: { exitCode: 0, files: { dir: "out", contents: { a: 1 } } } }],
+      }),
+      false,
+    );
     assert.equal(
       isCaseFile({ cases: [{ id: "c", description: "d", args: [], expect: { exitCode: 0, stdout: 1 } }] }),
       false,

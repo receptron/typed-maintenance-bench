@@ -1,0 +1,5 @@
+order_id	customer_id	order_date	sku	quantity	unit_price	discount	notes	currency
+1	T1	2026-03-01T22:00:00-03:00	A	1	1.00			EUR
+
+2	T1	2026-03-02	A	1	2.00			
+3	T2	2026-03-02	B	2	1.50			JPY

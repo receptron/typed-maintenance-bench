@@ -6,6 +6,8 @@ export type Arm = {
   template: string;
   taskRun: string;
   command: string[];
+  taskReport: string;
+  reportCommand: string[];
   libraryEntry: string;
   taskLibrary: string;
   build: string[] | null;
@@ -28,6 +30,8 @@ const tsArm = (id: ArmId, notes: string[]): Arm => ({
   template: id,
   taskRun: "node dist/cli.js",
   command: ["node", "{tree}/dist/cli.js"],
+  taskReport: "node dist/report.js",
+  reportCommand: ["node", "{tree}/dist/report.js"],
   libraryEntry: "{tree}/dist/index.js",
   taskLibrary: "`src/index.ts`, which `yarn build` compiles to `dist/index.js`",
   build: ["yarn", "-s", "build"],
@@ -42,6 +46,8 @@ export const ARMS: Record<ArmId, Arm> = {
     template: "js",
     taskRun: "node src/cli.js",
     command: ["node", "{tree}/src/cli.js"],
+    taskReport: "node src/report.js",
+    reportCommand: ["node", "{tree}/src/report.js"],
     libraryEntry: "{tree}/src/index.js",
     taskLibrary: "`src/index.js`",
     build: null,
