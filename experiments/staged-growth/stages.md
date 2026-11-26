@@ -1,6 +1,6 @@
 # Stages — order-aggregation tool
 
-Draft specifications. Each stage will get its own directory (`stage-1/` …) holding `task.md` (exactly what the agent receives), `visible-tests/`, `hidden-tests/` and `fixtures/`. Nothing below is final until the hidden tests exist and have been reviewed.
+Stages 1 and 2 are implemented: the binding text is `stage-1/task.md` and `stage-2/task.md`, and the hidden cases are in each stage's `hidden-tests/`. Stages 3–7 below are drafts.
 
 ## Data
 
