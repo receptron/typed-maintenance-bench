@@ -1,0 +1,1083 @@
+{
+  "cases": [
+    {
+      "id": "s3-text-day",
+      "description": "Single key is the stage 1 layout",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-01\t24.95\n2026-03-02\t10.75\n2026-03-03\t10.50\n2026-03-05\t7.00\nTOTAL\t53.20\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-text-customer",
+      "description": "Customer ids sort by code point (' before digits)",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "customer"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "customer\trevenue\nC'3\t7.00\nC1\t34.75\nC2\t11.45\nTOTAL\t53.20\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-text-day-sku",
+      "description": "Two keys",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day,sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\tsku\trevenue\n2026-03-01\tA-1\t20.00\n2026-03-01\tB|x\t4.95\n2026-03-02\t<b>&\"q\"\t7.00\n2026-03-02\tA-1\t3.75\n2026-03-03\tA-2\t0.50\n2026-03-03\tß\t10.00\n2026-03-05\tA\t1.00\n2026-03-05\tB|x\t6.00\nTOTAL\t\t53.20\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-text-sku-day",
+      "description": "Component-wise sort: A before A-1",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "sku,day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\tday\trevenue\n<b>&\"q\"\t2026-03-02\t7.00\nA\t2026-03-05\t1.00\nA-1\t2026-03-01\t20.00\nA-1\t2026-03-02\t3.75\nA-2\t2026-03-03\t0.50\nB|x\t2026-03-01\t4.95\nB|x\t2026-03-05\t6.00\nß\t2026-03-03\t10.00\nTOTAL\t\t53.20\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-text-three-keys",
+      "description": "Three keys",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "customer,day,sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "customer\tday\tsku\trevenue\nC'3\t2026-03-02\t<b>&\"q\"\t7.00\nC1\t2026-03-01\tA-1\t20.00\nC1\t2026-03-02\tA-1\t3.75\nC1\t2026-03-03\tß\t10.00\nC1\t2026-03-05\tA\t1.00\nC2\t2026-03-01\tB|x\t4.95\nC2\t2026-03-03\tA-2\t0.50\nC2\t2026-03-05\tB|x\t6.00\nTOTAL\t\t\t53.20\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-output-text-explicit",
+      "description": "--output text is the default layout",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "sku",
+        "--output",
+        "text"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\n<b>&\"q\"\t7.00\nA\t1.00\nA-1\t23.75\nA-2\t0.50\nB|x\t10.95\nß\t10.00\nTOTAL\t53.20\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-markdown-day-sku",
+      "description": "markdown with two keys and escapes",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day,sku",
+        "--output",
+        "markdown"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "| day | sku | revenue |\n|---|---|---:|\n| 2026-03-01 | A-1 | 20.00 |\n| 2026-03-01 | B\\|x | 4.95 |\n| 2026-03-02 | <b>&\"q\" | 7.00 |\n| 2026-03-02 | A-1 | 3.75 |\n| 2026-03-03 | A-2 | 0.50 |\n| 2026-03-03 | ß | 10.00 |\n| 2026-03-05 | A | 1.00 |\n| 2026-03-05 | B\\|x | 6.00 |\n| TOTAL |  | 53.20 |\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-markdown-customer",
+      "description": "markdown with one key",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "customer",
+        "--output",
+        "markdown"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "| customer | revenue |\n|---|---:|\n| C'3 | 7.00 |\n| C1 | 34.75 |\n| C2 | 11.45 |\n| TOTAL | 53.20 |\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-markdown-empty",
+      "description": "markdown with no rows",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--sku-prefix",
+        "Z",
+        "--output",
+        "markdown"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "| day | revenue |\n|---|---:|\n| TOTAL | 0.00 |\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-html-day-sku",
+      "description": "html with two keys and escapes",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day,sku",
+        "--output",
+        "html"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "<table>\n<thead>\n<tr><th>day</th><th>sku</th><th>revenue</th></tr>\n</thead>\n<tbody>\n<tr><td>2026-03-01</td><td>A-1</td><td>20.00</td></tr>\n<tr><td>2026-03-01</td><td>B|x</td><td>4.95</td></tr>\n<tr><td>2026-03-02</td><td>&lt;b&gt;&amp;&quot;q&quot;</td><td>7.00</td></tr>\n<tr><td>2026-03-02</td><td>A-1</td><td>3.75</td></tr>\n<tr><td>2026-03-03</td><td>A-2</td><td>0.50</td></tr>\n<tr><td>2026-03-03</td><td>ß</td><td>10.00</td></tr>\n<tr><td>2026-03-05</td><td>A</td><td>1.00</td></tr>\n<tr><td>2026-03-05</td><td>B|x</td><td>6.00</td></tr>\n</tbody>\n<tfoot>\n<tr><td>TOTAL</td><td></td><td>53.20</td></tr>\n</tfoot>\n</table>\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-html-customer",
+      "description": "html with one key",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "customer",
+        "--output",
+        "html"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "<table>\n<thead>\n<tr><th>customer</th><th>revenue</th></tr>\n</thead>\n<tbody>\n<tr><td>C&#39;3</td><td>7.00</td></tr>\n<tr><td>C1</td><td>34.75</td></tr>\n<tr><td>C2</td><td>11.45</td></tr>\n</tbody>\n<tfoot>\n<tr><td>TOTAL</td><td>53.20</td></tr>\n</tfoot>\n</table>\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-html-empty",
+      "description": "html with no rows",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--sku-prefix",
+        "Z",
+        "--output",
+        "html"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "<table>\n<thead>\n<tr><th>day</th><th>revenue</th></tr>\n</thead>\n<tbody>\n</tbody>\n<tfoot>\n<tr><td>TOTAL</td><td>0.00</td></tr>\n</tfoot>\n</table>\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-json-day-sku",
+      "description": "json with two keys and escapes",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day,sku",
+        "--output",
+        "json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "{\"groupBy\":[\"day\",\"sku\"],\"rows\":[{\"key\":[\"2026-03-01\",\"A-1\"],\"revenue\":\"20.00\"},{\"key\":[\"2026-03-01\",\"B|x\"],\"revenue\":\"4.95\"},{\"key\":[\"2026-03-02\",\"<b>&\\\"q\\\"\"],\"revenue\":\"7.00\"},{\"key\":[\"2026-03-02\",\"A-1\"],\"revenue\":\"3.75\"},{\"key\":[\"2026-03-03\",\"A-2\"],\"revenue\":\"0.50\"},{\"key\":[\"2026-03-03\",\"ß\"],\"revenue\":\"10.00\"},{\"key\":[\"2026-03-05\",\"A\"],\"revenue\":\"1.00\"},{\"key\":[\"2026-03-05\",\"B|x\"],\"revenue\":\"6.00\"}],\"total\":\"53.20\"}\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-json-customer",
+      "description": "json with one key",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "customer",
+        "--output",
+        "json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "{\"groupBy\":[\"customer\"],\"rows\":[{\"key\":[\"C'3\"],\"revenue\":\"7.00\"},{\"key\":[\"C1\"],\"revenue\":\"34.75\"},{\"key\":[\"C2\"],\"revenue\":\"11.45\"}],\"total\":\"53.20\"}\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-json-empty",
+      "description": "json with no rows",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--sku-prefix",
+        "Z",
+        "--output",
+        "json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "{\"groupBy\":[\"day\"],\"rows\":[],\"total\":\"0.00\"}\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-text-empty",
+      "description": "text with no rows",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--sku-prefix",
+        "Z"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\nTOTAL\t0.00\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-filter-range",
+      "description": "Inclusive date range",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--from",
+        "2026-03-02",
+        "--to",
+        "2026-03-03"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-02\t10.75\n2026-03-03\t10.50\nTOTAL\t21.25\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-filter-to",
+      "description": "--to alone",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--to",
+        "2026-03-01"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-01\t24.95\nTOTAL\t24.95\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-filter-dedup-first",
+      "description": "Duplicate judged before filtering",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--from",
+        "2026-03-04"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-05\t7.00\nTOTAL\t7.00\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-filter-dedup-honolulu",
+      "description": "Date filter independent of TZ",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--from",
+        "2026-03-04"
+      ],
+      "env": {
+        "TZ": "Pacific/Honolulu"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-05\t7.00\nTOTAL\t7.00\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-filter-range-tokyo",
+      "description": "Date range independent of TZ",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--from",
+        "2026-03-02",
+        "--to",
+        "2026-03-03"
+      ],
+      "env": {
+        "TZ": "Asia/Tokyo"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-02\t10.75\n2026-03-03\t10.50\nTOTAL\t21.25\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-filter-same-day",
+      "description": "--from equal to --to, two keys",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "sku,customer",
+        "--from",
+        "2026-03-03",
+        "--to",
+        "2026-03-03"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\tcustomer\trevenue\nA-2\tC2\t0.50\nß\tC1\t10.00\nTOTAL\t\t10.50\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-filter-prefix-dash",
+      "description": "SKU prefix A- excludes A",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "sku",
+        "--sku-prefix",
+        "A-"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\nA-1\t23.75\nA-2\t0.50\nTOTAL\t24.25\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-filter-prefix-case",
+      "description": "SKU prefix is case-sensitive",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "sku",
+        "--sku-prefix",
+        "a"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\nTOTAL\t0.00\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-filter-prefix-empty",
+      "description": "Empty prefix keeps everything",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "sku",
+        "--sku-prefix",
+        ""
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\n<b>&\"q\"\t7.00\nA\t1.00\nA-1\t23.75\nA-2\t0.50\nB|x\t10.95\nß\t10.00\nTOTAL\t53.20\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-json-input",
+      "description": "JSON input, two keys",
+      "args": [
+        "--input",
+        "orders.json",
+        "--group-by",
+        "day,sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\tsku\trevenue\n2026-03-01\tA-1\t20.00\n2026-03-01\tB|x\t4.95\n2026-03-02\t<b>&\"q\"\t7.00\n2026-03-02\tA-1\t3.75\n2026-03-03\tA-2\t0.50\n2026-03-03\tß\t10.00\n2026-03-05\tA\t1.00\n2026-03-05\tB|x\t6.00\nTOTAL\t\t53.20\n",
+        "stderrPrefixes": [
+          "orders.json:#7:",
+          "orders.json:#8:"
+        ]
+      }
+    },
+    {
+      "id": "s3-config-basic",
+      "description": "Config gives group-by and output",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-sku-markdown.json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "| sku | revenue |\n|---|---:|\n| <b>&\"q\" | 7.00 |\n| A | 1.00 |\n| A-1 | 23.75 |\n| A-2 | 0.50 |\n| B\\|x | 10.95 |\n| ß | 10.00 |\n| TOTAL | 53.20 |\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-config-flag-output",
+      "description": "Flag overrides config output",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-sku-markdown.json",
+        "--output",
+        "json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "{\"groupBy\":[\"sku\"],\"rows\":[{\"key\":[\"<b>&\\\"q\\\"\"],\"revenue\":\"7.00\"},{\"key\":[\"A\"],\"revenue\":\"1.00\"},{\"key\":[\"A-1\"],\"revenue\":\"23.75\"},{\"key\":[\"A-2\"],\"revenue\":\"0.50\"},{\"key\":[\"B|x\"],\"revenue\":\"10.95\"},{\"key\":[\"ß\"],\"revenue\":\"10.00\"}],\"total\":\"53.20\"}\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-config-flag-groupby",
+      "description": "Flag overrides config group-by",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-sku-markdown.json",
+        "--group-by",
+        "customer"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "| customer | revenue |\n|---|---:|\n| C'3 | 7.00 |\n| C1 | 34.75 |\n| C2 | 11.45 |\n| TOTAL | 53.20 |\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-config-range",
+      "description": "Config filters",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-range.json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-02\t10.75\n2026-03-03\t10.50\nTOTAL\t21.25\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-config-flag-to",
+      "description": "Flag overrides one end of the config range",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-range.json",
+        "--to",
+        "2026-03-02"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-02\t10.75\nTOTAL\t10.75\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-config-prefix-override",
+      "description": "Flag prefix overrides config prefix",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-prefix.json",
+        "--sku-prefix",
+        "A-"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\nA-1\t23.75\nA-2\t0.50\nTOTAL\t24.25\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-config-prefix",
+      "description": "Config prefix",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-prefix.json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\nA\t1.00\nA-1\t23.75\nA-2\t0.50\nTOTAL\t25.25\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-config-format",
+      "description": "Config gives the input format",
+      "args": [
+        "--input",
+        "orders.data",
+        "--config",
+        "cfg-format.json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-01\t24.95\n2026-03-02\t10.75\n2026-03-03\t10.50\n2026-03-05\t7.00\nTOTAL\t53.20\n",
+        "stderrPrefixes": [
+          "orders.data:8:",
+          "orders.data:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-config-all",
+      "description": "Config with every key",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-all.json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "{\"groupBy\":[\"customer\",\"day\",\"sku\"],\"rows\":[{\"key\":[\"C'3\",\"2026-03-02\",\"<b>&\\\"q\\\"\"],\"revenue\":\"7.00\"},{\"key\":[\"C1\",\"2026-03-01\",\"A-1\"],\"revenue\":\"20.00\"},{\"key\":[\"C1\",\"2026-03-02\",\"A-1\"],\"revenue\":\"3.75\"},{\"key\":[\"C1\",\"2026-03-03\",\"ß\"],\"revenue\":\"10.00\"},{\"key\":[\"C1\",\"2026-03-05\",\"A\"],\"revenue\":\"1.00\"},{\"key\":[\"C2\",\"2026-03-01\",\"B|x\"],\"revenue\":\"4.95\"},{\"key\":[\"C2\",\"2026-03-03\",\"A-2\"],\"revenue\":\"0.50\"},{\"key\":[\"C2\",\"2026-03-05\",\"B|x\"],\"revenue\":\"6.00\"}],\"total\":\"53.20\"}\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-config-empty-flag",
+      "description": "Empty config, group-by from flag",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-empty.json",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-01\t24.95\n2026-03-02\t10.75\n2026-03-03\t10.50\n2026-03-05\t7.00\nTOTAL\t53.20\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-fatal-config-empty",
+      "description": "No group-by anywhere",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-empty.json"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-config-range-flag",
+      "description": "Flag --from after config --to",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-range.json",
+        "--from",
+        "2026-03-04"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-bad-unknown-key",
+      "description": "Invalid config bad-unknown-key.json",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "bad-unknown-key.json",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-bad-groupby-string",
+      "description": "Invalid config bad-groupby-string.json",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "bad-groupby-string.json"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-bad-groupby-empty",
+      "description": "Invalid config bad-groupby-empty.json",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "bad-groupby-empty.json"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-bad-groupby-dup",
+      "description": "Invalid config bad-groupby-dup.json",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "bad-groupby-dup.json"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-bad-groupby-key",
+      "description": "Invalid config bad-groupby-key.json",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "bad-groupby-key.json"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-bad-output",
+      "description": "Invalid config bad-output.json",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "bad-output.json"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-bad-format",
+      "description": "Invalid config bad-format.json",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "bad-format.json"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-bad-from-type",
+      "description": "Invalid config bad-from-type.json",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "bad-from-type.json"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-bad-from-date",
+      "description": "Invalid config bad-from-date.json",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "bad-from-date.json"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-bad-syntax",
+      "description": "Invalid config bad-syntax.json",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "bad-syntax.json",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-bad-array",
+      "description": "Invalid config bad-array.json",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "bad-array.json",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-config-missing",
+      "description": "Config file does not exist",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--config",
+        "missing.json"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-groupby-dup",
+      "description": "Repeated key",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day,day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-groupby-empty-item",
+      "description": "Empty item",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day,"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-groupby-unknown",
+      "description": "Unknown key",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day,week"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-groupby-empty",
+      "description": "Empty group-by",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        ""
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-output",
+      "description": "Unknown output",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--output",
+        "pdf"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-from-date",
+      "description": "Impossible date",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--from",
+        "2026-02-30"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-from-shape",
+      "description": "Not YYYY-MM-DD",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--from",
+        "2026-3-1"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-from-after-to",
+      "description": "--from later than --to",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day",
+        "--from",
+        "2026-03-05",
+        "--to",
+        "2026-03-01"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s3-fatal-missing-groupby",
+      "description": "No group-by and no config",
+      "args": [
+        "--input",
+        "orders.csv"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    }
+  ]
+}

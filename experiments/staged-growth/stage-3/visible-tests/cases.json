@@ -1,0 +1,60 @@
+{
+  "cases": [
+    {
+      "id": "s3-visible-text-day-sku",
+      "description": "Two keys",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day,sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\tsku\trevenue\n2026-03-01\tA-1\t20.00\n2026-03-01\tB|x\t4.95\n2026-03-02\t<b>&\"q\"\t7.00\n2026-03-02\tA-1\t3.75\n2026-03-03\tA-2\t0.50\n2026-03-03\tß\t10.00\n2026-03-05\tA\t1.00\n2026-03-05\tB|x\t6.00\nTOTAL\t\t53.20\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-visible-markdown-customer",
+      "description": "markdown with one key",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "customer",
+        "--output",
+        "markdown"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "| customer | revenue |\n|---|---:|\n| C'3 | 7.00 |\n| C1 | 34.75 |\n| C2 | 11.45 |\n| TOTAL | 53.20 |\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    },
+    {
+      "id": "s3-visible-config-basic",
+      "description": "Config gives group-by and output",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--config",
+        "cfg-sku-markdown.json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "| sku | revenue |\n|---|---:|\n| <b>&\"q\" | 7.00 |\n| A | 1.00 |\n| A-1 | 23.75 |\n| A-2 | 0.50 |\n| B\\|x | 10.95 |\n| ß | 10.00 |\n| TOTAL | 53.20 |\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    }
+  ]
+}

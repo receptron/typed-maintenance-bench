@@ -1,0 +1,1 @@
+{"groupBy": ["customer", "day", "sku"], "output": "json", "from": "2026-03-01", "to": "2026-03-05", "skuPrefix": ""}

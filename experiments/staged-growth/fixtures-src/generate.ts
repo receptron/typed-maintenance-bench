@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ExcelJS from "exceljs";
 import { CSV_FILES, TEXT_FILES, LARGE_ROW_COUNT, XLSX_FILES, type Sheet } from "./data.js";
+import { STAGE_3_4_FILES } from "./data-stages-3-4.js";
 
 const STAGE_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -48,6 +49,7 @@ const writeSheet = async (relativePath: string, sheet: Sheet): Promise<void> => 
 const main = async (): Promise<void> => {
   Object.entries(CSV_FILES).forEach(([relativePath, lines]) => writeBytes(relativePath, lines.join("\n")));
   Object.entries(TEXT_FILES).forEach(([relativePath, bytes]) => writeBytes(relativePath, bytes));
+  Object.entries(STAGE_3_4_FILES).forEach(([relativePath, text]) => writeBytes(relativePath, text));
   writeBytes("stage-1/hidden-tests/fixtures/large.csv", largeCsv());
   await Promise.all(Object.entries(XLSX_FILES).map(([relativePath, sheet]) => writeSheet(relativePath, sheet)));
 };
