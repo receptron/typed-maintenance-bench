@@ -1,6 +1,6 @@
 # Stages — order-aggregation tool
 
-Stages 1 and 2 are implemented: the binding text is `stage-1/task.md` and `stage-2/task.md`, and the hidden cases are in each stage's `hidden-tests/`. Stages 3–7 below are drafts.
+Stages 1–4 are implemented: the binding text is each stage's `task.md`, and the hidden cases are in each stage's `hidden-tests/`. Stages 5–7 below are drafts.
 
 ## Data
 
