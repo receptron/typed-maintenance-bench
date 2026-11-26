@@ -177,6 +177,118 @@
         "stdout": "customer\trevenue\nK1\t3.00\nK2\t3.00\nTOTAL\t6.00\n",
         "stderrPrefixes": []
       }
+    },
+    {
+      "id": "s7-d-cli-html",
+      "description": "Rows in code point order in HTML",
+      "args": [
+        "--input",
+        "sort.csv",
+        "--group-by",
+        "sku",
+        "--output",
+        "html"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "<table>\n<thead>\n<tr><th>sku</th><th>revenue</th></tr>\n</thead>\n<tbody>\n<tr><td>A</td><td>10.00</td></tr>\n<tr><td>中</td><td>3.00</td></tr>\n<tr><td>ﬁ</td><td>7.00</td></tr>\n<tr><td>🙂</td><td>1.00</td></tr>\n</tbody>\n<tfoot>\n<tr><td>TOTAL</td><td>21.00</td></tr>\n</tfoot>\n</table>\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s7-d-cli-markdown-customer",
+      "description": "Customers in code point order in Markdown",
+      "args": [
+        "--input",
+        "sort.csv",
+        "--group-by",
+        "customer",
+        "--output",
+        "markdown"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "| customer | revenue |\n|---|---:|\n| S1 | 4.00 |\n| S2 | 6.00 |\n| ﬃ | 6.00 |\n| 🎁 | 5.00 |\n| TOTAL | 21.00 |\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s7-d-cli-text-two-keys",
+      "description": "Two keys in code point order",
+      "args": [
+        "--input",
+        "sort.csv",
+        "--group-by",
+        "sku,day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\tday\trevenue\nA\t2026-03-03\t4.00\nA\t2026-03-04\t6.00\n中\t2026-03-03\t3.00\nﬁ\t2026-03-02\t2.00\nﬁ\t2026-03-03\t5.00\n🙂\t2026-03-02\t1.00\nTOTAL\t\t21.00\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s7-d-cli-json",
+      "description": "JSON rows in code point order",
+      "args": [
+        "--input",
+        "sort.csv",
+        "--group-by",
+        "customer",
+        "--output",
+        "json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "{\"groupBy\":[\"customer\"],\"rows\":[{\"key\":[\"S1\"],\"currency\":\"USD\",\"revenue\":\"4.00\"},{\"key\":[\"S2\"],\"currency\":\"USD\",\"revenue\":\"6.00\"},{\"key\":[\"ﬃ\"],\"currency\":\"USD\",\"revenue\":\"6.00\"},{\"key\":[\"🎁\"],\"currency\":\"USD\",\"revenue\":\"5.00\"}],\"totals\":[{\"currency\":\"USD\",\"total\":\"21.00\"}]}\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s7-e-cli-default-utc",
+      "description": "Timestamps without --time-zone count in UTC, as documented",
+      "args": [
+        "--input",
+        "orders6.csv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-01\t5.00 EUR\n2026-03-01\t4.00 JPY\n2026-03-01\t20.00\n2026-03-02\t2.00 EUR\n2026-03-02\t4.00\n2026-03-04\t1.00 EUR\n2026-03-04\t6.30\n2026-03-09\t1.00\nTOTAL\t8.00 EUR\nTOTAL\t4.00 JPY\nTOTAL\t31.30\n",
+        "stderrPrefixes": [
+          "orders6.csv:6:",
+          "orders6.csv:8:",
+          "orders6.csv:10:",
+          "orders6.csv:11:",
+          "orders6.csv:15:",
+          "orders6.csv:16:"
+        ]
+      }
+    },
+    {
+      "id": "s7-e-cli-tokyo",
+      "description": "--time-zone Asia/Tokyo gives Tokyo days",
+      "args": [
+        "--input",
+        "orders6.csv",
+        "--group-by",
+        "day",
+        "--time-zone",
+        "Asia/Tokyo"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-01\t5.00 EUR\n2026-03-01\t20.00\n2026-03-02\t2.00 EUR\n2026-03-02\t4.00 JPY\n2026-03-02\t3.00\n2026-03-03\t1.00\n2026-03-04\t1.00 EUR\n2026-03-04\t6.30\n2026-03-09\t1.00\nTOTAL\t8.00 EUR\nTOTAL\t4.00 JPY\nTOTAL\t31.30\n",
+        "stderrPrefixes": [
+          "orders6.csv:6:",
+          "orders6.csv:8:",
+          "orders6.csv:10:",
+          "orders6.csv:11:",
+          "orders6.csv:15:",
+          "orders6.csv:16:"
+        ]
+      }
     }
   ]
 }

@@ -37,6 +37,22 @@
           "to": "  const config = checkedConfig(pairs.get(\"--config\"), input);\n  const settings = { ...config, ...flagSettings(pairs) };\n  const query = toQuery({ ...settings, timeZone: config.timeZone ?? settings.timeZone });"
         }
       ]
+    },
+    {
+      "id": "d",
+      "plant": "When rows, report lines or totals are sorted, compare strings by UTF-16 code units instead of by Unicode code points, everywhere such strings are compared. So a key with a character outside the Basic Multilingual Plane, such as an emoji, sorts before one with a character from U+E000 to U+FFFF, such as `ﬁ`. Strings made only of other characters must sort exactly as now.",
+      "replacements": [
+        {
+          "file": "aggregate.ts",
+          "from": "const codePoints = (text: string): number[] => Array.from(text, (character) => character.codePointAt(0) ?? 0);",
+          "to": "const codePoints = (text: string): number[] => Array.from({ length: text.length }, (_, index) => text.charCodeAt(index));"
+        }
+      ]
+    },
+    {
+      "id": "e",
+      "plant": null,
+      "replacements": []
     }
   ]
 }

@@ -12,6 +12,7 @@ import type { StageRun } from "./runStage.js";
 import { copyTree, fillPlaceholders, placeReferenceFrom } from "./tree.js";
 
 // Stage 7 starts from a tree with bugs in it; the maintainer's session must find and fix them.
+// A report that is not a bug has no plant: its cases pass before and must still pass after.
 export const SEED_STAGE = 7;
 const BUGS_FILE = "bugs.json";
 const PLANT_PROMPT_FILE = "plant.md";
@@ -19,9 +20,9 @@ const SEED_TRANSCRIPT = "seed-agent.jsonl";
 const DIFF_TIMEOUT_MS = 60_000;
 
 type Replacement = { file: string; from: string; to: string };
-export type Bug = { id: string; plant: string; replacements: Replacement[] };
+export type Bug = { id: string; plant: string | null; replacements: Replacement[] };
 export type PlantedBy = "replacements" | "agent" | null;
-export type BugSeed = { id: string; native: boolean; planted: boolean; failingAfter: string[] };
+export type BugSeed = { id: string; isBug: boolean; native: boolean; planted: boolean; failingAfter: string[] };
 export type SeedReport = {
   plantedBy: PlantedBy;
   bugs: BugSeed[];
@@ -38,7 +39,7 @@ const isReplacement = (value: unknown): value is Replacement =>
 const isBug = (value: unknown): value is Bug =>
   isRecord(value) &&
   typeof value.id === "string" &&
-  typeof value.plant === "string" &&
+  (typeof value.plant === "string" || value.plant === null) &&
   Array.isArray(value.replacements) &&
   value.replacements.every(isReplacement);
 
@@ -85,7 +86,7 @@ const plantByReplacements = async (arm: Arm, tree: string, bugs: Bug[]): Promise
 export const renderPlantPrompt = (arm: Arm, bugs: Bug[]): string =>
   fillPlaceholders(arm, readFileSync(path.join(stageDir(SEED_STAGE), PLANT_PROMPT_FILE), "utf8")).replaceAll(
     "{{BUGS}}",
-    bugs.map((bug) => `- ${bug.plant}`).join("\n"),
+    bugs.flatMap((bug) => (bug.plant === null ? [] : [`- ${bug.plant}`])).join("\n"),
   );
 
 const plantByAgent = async (run: StageRun, tree: string, outDir: string, bugs: Bug[]): Promise<void> => {
@@ -131,7 +132,8 @@ const snapshot = async (arm: Arm, tree: string): Promise<Snapshot> => {
 
 const bugSeed = (bug: Bug, toPlant: Bug[], after: Grade): BugSeed => ({
   id: bug.id,
-  native: !toPlant.includes(bug),
+  isBug: bug.plant !== null,
+  native: bug.plant !== null && !toPlant.includes(bug),
   planted: toPlant.includes(bug),
   failingAfter: failingCasesOf(after, bug),
 });
@@ -159,7 +161,7 @@ export const seedBugs = async (run: StageRun, tree: string, outDir: string): Pro
   const bugs = loadBugs();
   const before = await snapshot(run.arm, tree);
   try {
-    const toPlant = bugs.filter((bug) => failingCasesOf(before.grade, bug).length === 0);
+    const toPlant = bugs.filter((bug) => bug.plant !== null && failingCasesOf(before.grade, bug).length === 0);
     const plantedBy = await plant(run, tree, outDir, toPlant);
     await writeSeedDiff(before.copy, tree, path.join(outDir, "seed.patch"));
     const report = { plantedBy, ...reportOf(bugs, toPlant, before, await gradeTree(run.arm, SEED_STAGE, tree), tree) };

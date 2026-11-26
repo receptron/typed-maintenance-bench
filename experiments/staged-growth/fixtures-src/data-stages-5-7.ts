@@ -203,6 +203,16 @@ const STAGE_7_HIDDEN: Record<string, string> = {
   )}\n`,
   "orders6.csv": ORDERS_6_CSV,
   "cfg-tokyo.json": '{"groupBy": ["day"], "timeZone": "Asia/Tokyo"}\n',
+  // Code point order: A < 中 < ﬁ (U+FB01) < 🙂 (U+1F642); by UTF-16 code units 🙂 comes before ﬁ.
+  "sort.csv": csv([
+    NAMES_HEADER,
+    ["1", "S1", "2026-03-02", "🙂", "1", "1.00"],
+    ["2", "S2", "2026-03-02", "ﬁ", "1", "2.00"],
+    ["3", "S1", "2026-03-03", "中", "1", "3.00"],
+    ["4", "S2", "2026-03-03", "A", "1", "4.00"],
+    ["5", "🎁", "2026-03-03", "ﬁ", "1", "5.00"],
+    ["6", "ﬃ", "2026-03-04", "A", "1", "6.00"],
+  ]),
   "orders-c.csv": csv([
     ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price", "currency"],
     ["1", "K1", "2026-03-01T22:00:00Z", "A", "1", "3.00", ""],
@@ -229,6 +239,16 @@ const STAGE_7_ATTACHMENTS: Record<string, string> = {
     ["2", "K1", "2026-03-02T01:00:00Z", "A", "1", "6.00", ""],
   ]),
   "team.json": '{"groupBy": ["day"], "timeZone": "Asia/Tokyo"}\n',
+  "menu.csv": csv([
+    NAMES_HEADER,
+    ["1", "K1", "2026-03-02", "B-02", "1", "3.00"],
+    ["2", "K1", "2026-03-02", "ＳＥＴ-01", "1", "12.00"],
+    ["3", "K2", "2026-03-03", "🍣-01", "2", "8.00"],
+  ]),
+  "tokyo-orders.csv": csv([
+    ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price", "currency"],
+    ["1", "T1", "2026-03-02T00:30:00+09:00", "A", "1", "9.00", ""],
+  ]),
 };
 
 const prefixed = <T>(prefix: string, files: Record<string, T>): Record<string, T> =>

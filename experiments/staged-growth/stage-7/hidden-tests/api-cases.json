@@ -55,6 +55,158 @@
           "warnings": []
         }
       }
+    },
+    {
+      "id": "s7-d-api-aggregate",
+      "description": "aggregate sorts by code point",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "sku"
+          ]
+        }
+      ],
+      "recordsFrom": {
+        "path": "sort.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "A"
+              ],
+              "currency": "USD",
+              "revenueCents": 1000
+            },
+            {
+              "key": [
+                "中"
+              ],
+              "currency": "USD",
+              "revenueCents": 300
+            },
+            {
+              "key": [
+                "ﬁ"
+              ],
+              "currency": "USD",
+              "revenueCents": 700
+            },
+            {
+              "key": [
+                "🙂"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "USD",
+              "cents": 2100
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s7-e-api-default-utc",
+      "description": "aggregate defaults to UTC",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ]
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders6.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "EUR",
+              "revenueCents": 500
+            },
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "JPY",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "USD",
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "currency": "EUR",
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "currency": "USD",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "2026-03-04"
+              ],
+              "currency": "EUR",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-04"
+              ],
+              "currency": "USD",
+              "revenueCents": 630
+            },
+            {
+              "key": [
+                "2026-03-09"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 800
+            },
+            {
+              "currency": "JPY",
+              "cents": 400
+            },
+            {
+              "currency": "USD",
+              "cents": 3130
+            }
+          ]
+        }
+      }
     }
   ]
 }

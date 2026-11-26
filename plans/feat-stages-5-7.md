@@ -25,11 +25,15 @@ Stages 1–4 do not separate the arms on correctness: every pilot run passed eve
 
 ## Stage 7 decisions
 
-- **Three bug reports**, written as users write them (symptom, sample input, expected output), in an area each that earlier hidden cases leave open: TSV files with CRLF line ends lose the currency in the last column; report file names for non-ASCII customer ids are not percent-encoded byte by byte; `--time-zone` does not override `timeZone` from the config file.
-- **Seeding**: in reset mode, and for the reference agent, the bugs are planted by fixed text replacements in the stage 6 reference (`stage-7/seeded-bugs.json`). In cumulative mode the arm's own code differs per run, so a separate agent session plants them from behaviour descriptions (`stage-7/plant.md`) before the maintainer's session starts.
-- **Checking the seeding**: the stage 7 hidden cases of each bug run before and after planting. A bug whose cases already fail is native and is not planted. `seed.json` records, per bug, whether it was native, planted or failed to plant, plus any earlier case that the planting broke and whether build and verify still pass. The planting session's transcript and diff are kept next to it.
-- The maintainer gets only the bug reports and the tree, with no git history and no visible tests.
+- **Five reports**, written as users write them: a symptom, the command and what it printed, but not the correct output. What is correct comes from the documentation: the earlier stages' requests, rendered for the arm without their test sections, in `docs/requests/`.
+- **Four are bugs**, each in an area earlier hidden cases leave open: TSV files with CRLF line ends lose the currency in the last column; report file names for non-ASCII customer ids are not percent-encoded byte by byte; `--time-zone` does not override `timeZone` from the config file; keys sort by UTF-16 code units instead of code points.
+- **The sort bug is in shared code.** The report names only the HTML output; the hidden cases also check text, Markdown, JSON and the API, so a fix where the symptom shows is not enough.
+- **One is not a bug**: a user wants a timestamp counted on the date written in it, while the documented default zone is UTC. Its cases pass before and must still pass after; changing the behaviour also breaks stage 6 cases.
+- **Seeding**: in reset mode, and for the reference agent, the bugs are planted by fixed text replacements in the stage 6 reference (`stage-7/bugs.json`). In cumulative mode the arm's own code differs per run, so a separate agent session plants them from behaviour descriptions (`stage-7/plant.md`) before the maintainer's session starts.
+- **Checking the seeding**: the stage 7 hidden cases of each bug run before and after planting. A bug whose cases already fail is native and is not planted. `seed.json` records, per report, whether it is a bug, native, planted or failed to plant, plus any earlier case that the planting broke and whether build and verify still pass. The planting session's transcript and diff are kept next to it.
+- The maintainer gets the reports, the documentation and the tree, with no git history and no visible tests.
 - The stage 7 reference is the stage 6 reference.
+- A first version had three reports that quoted the correct output; in a trial every arm fixed all three in well under a minute, so the reports now leave the answer to the documentation, and the shared-code bug and the report that is not a bug were added.
 
 ## Steps
 

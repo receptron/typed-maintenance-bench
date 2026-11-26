@@ -115,10 +115,35 @@ export const installDependencies = async (tree: string): Promise<void> => {
   requireSuccess(await execute(install, { cwd: tree, timeoutMs: INSTALL_TIMEOUT_MS }), `yarn install in ${tree}`);
 };
 
+// The earlier tasks, as the documentation a maintainer would have: the stage lists them in docs.json.
+const DOCS_FILE = "docs.json";
+const REQUESTS_DIR = path.join("docs", "requests");
+const TESTS_SECTION = /\n## Tests\n[\s\S]*$/;
+
+const requestStages = (stage: number): number[] => {
+  const file = path.join(stageDir(stage), DOCS_FILE);
+  if (!existsSync(file)) return [];
+  const requests = readJsonObject(file).requests;
+  if (!Array.isArray(requests) || !requests.every((item) => typeof item === "number"))
+    throw new Error(`${file} must hold { "requests": [stage numbers] }`);
+  return requests;
+};
+
+const installDocs = (arm: Arm, stage: number, tree: string): void => {
+  const target = path.join(tree, REQUESTS_DIR);
+  rmSync(target, { recursive: true, force: true });
+  requestStages(stage).forEach((earlier) => {
+    mkdirSync(target, { recursive: true });
+    const text = `${renderTask(arm, earlier).replace(TESTS_SECTION, "").trimEnd()}\n`;
+    writeFileSync(path.join(target, `stage-${earlier}.md`), text);
+  });
+};
+
 export const prepareTree = async (options: PrepareOptions): Promise<void> => {
   await placeBase(options);
   installTests(options.arm, options.stage, options.tree);
   installAttachments(options.stage, options.tree);
+  installDocs(options.arm, options.stage, options.tree);
   writeFileSync(path.join(options.tree, "TASK.md"), renderTask(options.arm, options.stage));
   await installDependencies(options.tree);
 };

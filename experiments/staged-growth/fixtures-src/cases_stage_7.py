@@ -5,8 +5,8 @@ usage: python3 cases_stage_7.py ../stage-7
 """
 import json, os, sys
 
-from cases_stage_6 import (DAY_NEW_YORK, DAY_UTC, REPORT_TSV6, TSV6_CUST, TSV6_DAY_NEW_YORK, WARN_6, files, rec,
-                           text)
+from cases_stage_6 import (DAY_NEW_YORK, DAY_TOKYO, DAY_UTC, RENDER, REPORT_TSV6, TSV6_CUST, TSV6_DAY_NEW_YORK, WARN_6,
+                           files, rec, result, text)
 
 cases = []
 api_cases = []
@@ -52,6 +52,29 @@ cli("s7-c-flag-new-york", "--time-zone New York over a Tokyo config", [*IN6, "--
 cli("s7-c-flag-with-filter", "--time-zone decides which records a date filter keeps",
     ["--input", "orders-c.csv", "--config", "cfg-tokyo.json", "--group-by", "customer", "--from", "2026-03-01", "--to", "2026-03-01",
      "--time-zone", "America/New_York"], text(["customer"], [(("K1",), "USD", 300), (("K2",), "USD", 300)]))
+
+
+# Bug d: keys sort by code point everywhere. sort.csv, by code point: A < 中 < ﬁ (U+FB01) < 🙂 (U+1F642); S1 < S2 < ﬃ (U+FB03)
+# < 🎁 (U+1F381). The report names only the HTML output; the comparison is shared by every output and the API.
+SORT_SKU = [(("A",), "USD", 1000), (("中",), "USD", 300), (("ﬁ",), "USD", 700), (("🙂",), "USD", 100)]
+SORT_CUST = [(("S1",), "USD", 400), (("S2",), "USD", 600), (("ﬃ",), "USD", 600), (("🎁",), "USD", 500)]
+SORT_SKU_DAY = [(("A", "2026-03-03"), "USD", 400), (("A", "2026-03-04"), "USD", 600), (("中", "2026-03-03"), "USD", 300),
+                (("ﬁ", "2026-03-02"), "USD", 200), (("ﬁ", "2026-03-03"), "USD", 500), (("🙂", "2026-03-02"), "USD", 100)]
+SORT = ["--input", "sort.csv"]
+cli("s7-d-cli-html", "Rows in code point order in HTML", [*SORT, "--group-by", "sku", "--output", "html"], RENDER["html"](["sku"], SORT_SKU))
+cli("s7-d-cli-markdown-customer", "Customers in code point order in Markdown", [*SORT, "--group-by", "customer", "--output", "markdown"],
+    RENDER["markdown"](["customer"], SORT_CUST))
+cli("s7-d-cli-text-two-keys", "Two keys in code point order", [*SORT, "--group-by", "sku,day"], text(["sku", "day"], SORT_SKU_DAY))
+cli("s7-d-cli-json", "JSON rows in code point order", [*SORT, "--group-by", "customer", "--output", "json"], RENDER["json"](["customer"], SORT_CUST))
+api_cases.append({"id": "s7-d-api-aggregate", "description": "aggregate sorts by code point", "call": "aggregate",
+                  "args": [{"groupBy": ["sku"]}], "recordsFrom": {"path": "sort.csv"}, "expect": {"returns": result(["sku"], SORT_SKU)}})
+
+# Report e is not a bug: without --time-zone the day is the UTC day. These cases pass before and must pass after.
+IN6_ONLY = ["--input", "orders6.csv", "--group-by", "day"]
+cli("s7-e-cli-default-utc", "Timestamps without --time-zone count in UTC, as documented", IN6_ONLY, text(["day"], DAY_UTC), WARN_6)
+cli("s7-e-cli-tokyo", "--time-zone Asia/Tokyo gives Tokyo days", [*IN6_ONLY, "--time-zone", "Asia/Tokyo"], text(["day"], DAY_TOKYO), WARN_6)
+api_cases.append({"id": "s7-e-api-default-utc", "description": "aggregate defaults to UTC", "call": "aggregate",
+                  "args": [{"groupBy": ["day"]}], "recordsFrom": {"path": "orders6.csv"}, "expect": {"returns": result(["day"], DAY_UTC)}})
 
 
 def main():

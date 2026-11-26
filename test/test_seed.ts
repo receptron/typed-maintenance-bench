@@ -56,7 +56,7 @@ describe("the stage 7 bugs", () => {
     Object.values(ARMS).forEach((arm) => {
       const prompt = renderPlantPrompt(arm, bugs);
       assert.equal(prompt.includes("{{"), false, arm.id);
-      bugs.forEach((seeded) => assert.ok(prompt.includes(seeded.plant)));
+      bugs.forEach((seeded) => assert.ok(seeded.plant === null || prompt.includes(seeded.plant)));
     });
   });
 });
