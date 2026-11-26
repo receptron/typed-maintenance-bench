@@ -1,0 +1,6 @@
+dist/
+node_modules/
+results/
+experiments/**/fixtures/
+experiments/**/cases.json
+*.md
