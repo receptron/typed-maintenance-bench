@@ -1,6 +1,6 @@
 # Stages — order-aggregation tool
 
-Stages 1–4 are implemented: the binding text is each stage's `task.md`, and the hidden cases are in each stage's `hidden-tests/`. Stages 5–7 below are drafts.
+All seven stages are implemented: the binding text is each stage's `task.md`, and the hidden cases are in each stage's `hidden-tests/`. The descriptions below are the outline they were written from; the decisions for stages 5–7 are in `plans/feat-stages-5-7.md`.
 
 ## Data
 
@@ -34,4 +34,4 @@ Money gains a currency (unit price becomes amount + currency; aggregates are per
 
 ## Stage 7 — maintenance without context
 
-A fresh session receives three bug reports written the way users write them (symptom, sample input, expected output), and nothing else. The bugs are seeded into the reference implementation in reset mode; in cumulative mode they are reports against behaviour the hidden tests already show to be wrong in that arm's tree, or seeded the same way if none exist.
+A fresh session receives three bug reports written the way users write them (symptom, sample input, expected output), and nothing else. The bugs are seeded into the reference implementation in reset mode. In cumulative mode a bug the arm's tree already has is left as it is, and the others are planted by a separate session from a description of the behaviour, then checked against the stage 7 hidden cases before the maintainer starts.

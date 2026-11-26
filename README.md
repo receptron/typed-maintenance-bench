@@ -64,7 +64,7 @@ Each arm runs in two modes: **cumulative** (each stage builds on that arm's own 
 
 ### Status
 
-Stages 1–4 are runnable for the pilot arms (`js`, `ts`, `ts-noany`), in both modes. The harness passes its self-test (the reference implementation passes every hidden case in every arm and mode). A pilot with Claude Code (arms `js`, `ts`, `ts-noany`, cumulative, stages 1–2) has been run; the raw outputs are in [results/](results/README.md) and the first report is [reports/2026-11-26-pilot-stages-1-2.md](reports/2026-11-26-pilot-stages-1-2.md). Stages 1–2 turned out too easy to separate the arms on correctness, so stages 3 (more outputs, multi-key grouping, filters, a config file) and 4 (a library with a public API, tested by calling it) have been added.
+Stages 1–7 are runnable for the pilot arms (`js`, `ts`, `ts-noany`), in both modes. The harness passes its self-test (the reference implementation passes every hidden case in every arm and mode). A pilot with Claude Code (arms `js`, `ts`, `ts-noany`, cumulative, stages 1–2) has been run; the raw outputs are in [results/](results/README.md) and the first report is [reports/2026-11-26-pilot-stages-1-2.md](reports/2026-11-26-pilot-stages-1-2.md). Stages 1–2 turned out too easy to separate the arms on correctness, so stages 3 (more outputs, multi-key grouping, filters, a config file) and 4 (a library with a public API, tested by calling it) were added; a pilot over stages 1–4 did not separate the arms on correctness either. All seven stages are now runnable: 5 (a report tool on the library, and format plugins), 6 (a breaking change: currencies and time zones, followed by every consumer) and 7 (three bug reports for a fresh session, with the bugs seeded first).
 
 ### Reproducing
 
@@ -139,7 +139,7 @@ Evil Martians は、[型のエラーを直す時間はコーディングエー�
 
 ### 現状
 
-段階 1〜4 を、小さく試す組（`js`、`ts`、`ts-noany`）で、2 つの進め方の両方で走らせられます。ハーネスは自己確認に通っています（参照実装が、全組・全進め方で、隠したテストにすべて通る）。Claude Code での小さな試し走り（`js`、`ts`、`ts-noany`、積み上げ、段階 1〜2）を走らせました。生の出力は [results/](results/README.md) に、最初のレポートは [reports/2026-11-26-pilot-stages-1-2.md](reports/2026-11-26-pilot-stages-1-2.md) にあります。段階 1〜2 は易しすぎて、正しさでは組の差が出なかったので、段階 3（出力形式、複数のキーでの集計、絞り込み、設定ファイル）と段階 4（公開 API を持つライブラリ。API を直接呼んでテストする）を足しました。
+段階 1〜7 を、小さく試す組（`js`、`ts`、`ts-noany`）で、2 つの進め方の両方で走らせられます。ハーネスは自己確認に通っています（参照実装が、全組・全進め方で、隠したテストにすべて通る）。Claude Code での小さな試し走り（`js`、`ts`、`ts-noany`、積み上げ、段階 1〜2）を走らせました。生の出力は [results/](results/README.md) に、最初のレポートは [reports/2026-11-26-pilot-stages-1-2.md](reports/2026-11-26-pilot-stages-1-2.md) にあります。段階 1〜2 は易しすぎて、正しさでは組の差が出なかったので、段階 3（出力形式、複数のキーでの集計、絞り込み、設定ファイル）と段階 4（公開 API を持つライブラリ。API を直接呼んでテストする）を足しました。段階 1〜4 の試し走りでも、正しさでは差が出ませんでした。いまは 7 段階すべてを走らせられます。段階 5（ライブラリの上に作る報告ツールと、入力形式のプラグイン）、段階 6（破壊的な変更：通貨とタイムゾーン。使う側すべてが追従する）、段階 7（新しいセッションに 3 つのバグ報告を渡す。バグは先に仕込む）です。
 
 ### 再現する
 
