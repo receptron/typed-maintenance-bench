@@ -1,0 +1,713 @@
+{
+  "cases": [
+    {
+      "id": "s5-tsv-day",
+      "description": "TSV by day",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-12-27\t10.00\n2026-12-28\t20.00\n2026-12-31\t4.95\n2027-01-01\t3.75\n2027-01-03\t7.00\n2027-01-04\t0.50\n2027-01-10\t1.00\nTOTAL\t47.20\n",
+        "stderrPrefixes": [
+          "orders.tsv:9:",
+          "orders.tsv:10:",
+          "orders.tsv:11:"
+        ]
+      }
+    },
+    {
+      "id": "s5-tsv-sku",
+      "description": "TSV keeps quotes as ordinary characters",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--group-by",
+        "sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\n\"B\"\t4.95\nA\t40.75\nB\t0.50\nX\t1.00\nTOTAL\t47.20\n",
+        "stderrPrefixes": [
+          "orders.tsv:9:",
+          "orders.tsv:10:",
+          "orders.tsv:11:"
+        ]
+      }
+    },
+    {
+      "id": "s5-tsv-customer",
+      "description": "TSV trims spaces",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--group-by",
+        "customer"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "customer\trevenue\nC.1\t1.00\nC/3\t7.00\nC1\t33.75\nC2\t5.45\nTOTAL\t47.20\n",
+        "stderrPrefixes": [
+          "orders.tsv:9:",
+          "orders.tsv:10:",
+          "orders.tsv:11:"
+        ]
+      }
+    },
+    {
+      "id": "s5-tsv-format-flag",
+      "description": "--format tsv for another extension",
+      "args": [
+        "--input",
+        "orders.data",
+        "--format",
+        "tsv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-12-27\t10.00\n2026-12-28\t20.00\n2026-12-31\t4.95\n2027-01-01\t3.75\n2027-01-03\t7.00\n2027-01-04\t0.50\n2027-01-10\t1.00\nTOTAL\t47.20\n",
+        "stderrPrefixes": [
+          "orders.data:9:",
+          "orders.data:10:",
+          "orders.data:11:"
+        ]
+      }
+    },
+    {
+      "id": "s5-tsv-extension-case",
+      "description": "The .tsv extension ignoring case",
+      "args": [
+        "--input",
+        "upper.TSV",
+        "--group-by",
+        "sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\n\"B\"\t4.95\nA\t40.75\nB\t0.50\nX\t1.00\nTOTAL\t47.20\n",
+        "stderrPrefixes": [
+          "upper.TSV:9:",
+          "upper.TSV:10:",
+          "upper.TSV:11:"
+        ]
+      }
+    },
+    {
+      "id": "s5-tsv-json-output",
+      "description": "TSV keys in JSON output",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--group-by",
+        "sku",
+        "--output",
+        "json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "{\"groupBy\":[\"sku\"],\"rows\":[{\"key\":[\"\\\"B\\\"\"],\"revenue\":\"4.95\"},{\"key\":[\"A\"],\"revenue\":\"40.75\"},{\"key\":[\"B\"],\"revenue\":\"0.50\"},{\"key\":[\"X\"],\"revenue\":\"1.00\"}],\"total\":\"47.20\"}\n",
+        "stderrPrefixes": [
+          "orders.tsv:9:",
+          "orders.tsv:10:",
+          "orders.tsv:11:"
+        ]
+      }
+    },
+    {
+      "id": "s5-tsv-markdown-two-keys",
+      "description": "TSV with two keys in Markdown",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--group-by",
+        "customer,day",
+        "--output",
+        "markdown"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "| customer | day | revenue |\n|---|---|---:|\n| C.1 | 2027-01-10 | 1.00 |\n| C/3 | 2027-01-03 | 7.00 |\n| C1 | 2026-12-27 | 10.00 |\n| C1 | 2026-12-28 | 20.00 |\n| C1 | 2027-01-01 | 3.75 |\n| C2 | 2026-12-31 | 4.95 |\n| C2 | 2027-01-04 | 0.50 |\n| TOTAL |  | 47.20 |\n",
+        "stderrPrefixes": [
+          "orders.tsv:9:",
+          "orders.tsv:10:",
+          "orders.tsv:11:"
+        ]
+      }
+    },
+    {
+      "id": "s5-tsv-filter",
+      "description": "Filters on TSV",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--group-by",
+        "day",
+        "--from",
+        "2027-01-01",
+        "--to",
+        "2027-01-04"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2027-01-01\t3.75\n2027-01-03\t7.00\n2027-01-04\t0.50\nTOTAL\t11.25\n",
+        "stderrPrefixes": [
+          "orders.tsv:9:",
+          "orders.tsv:10:",
+          "orders.tsv:11:"
+        ]
+      }
+    },
+    {
+      "id": "s5-tsv-config-format",
+      "description": "Config file chooses tsv",
+      "args": [
+        "--config",
+        "cfg-tsv.json",
+        "--input",
+        "orders.data"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "customer\trevenue\nC.1\t1.00\nC/3\t7.00\nC1\t33.75\nC2\t5.45\nTOTAL\t47.20\n",
+        "stderrPrefixes": [
+          "orders.data:9:",
+          "orders.data:10:",
+          "orders.data:11:"
+        ]
+      }
+    },
+    {
+      "id": "s5-tsv-bom",
+      "description": "TSV with a byte-order mark",
+      "args": [
+        "--input",
+        "bom.tsv",
+        "--group-by",
+        "customer"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "customer\trevenue\nB1\t2.00\nTOTAL\t2.00\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s5-tsv-short-line",
+      "description": "A short line is invalid even when only optional fields are missing",
+      "args": [
+        "--input",
+        "short.tsv",
+        "--group-by",
+        "customer"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "customer\trevenue\nS1\t2.00\nTOTAL\t2.00\n",
+        "stderrPrefixes": [
+          "short.tsv:2:"
+        ]
+      }
+    },
+    {
+      "id": "s5-tsv-header-only",
+      "description": "TSV with no records",
+      "args": [
+        "--input",
+        "header.tsv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\nTOTAL\t0.00\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s5-tsv-fatal-missing-column",
+      "description": "TSV header missing a column",
+      "args": [
+        "--input",
+        "missing-column.tsv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s5-tsv-fatal-empty",
+      "description": "TSV with no header line",
+      "args": [
+        "--input",
+        "empty.tsv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s5-tsv-fatal-latin1",
+      "description": "TSV that is not UTF-8",
+      "args": [
+        "--input",
+        "latin1.tsv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s5-fatal-unknown-format",
+      "description": "A format nobody registered",
+      "args": [
+        "--input",
+        "orders.pipe",
+        "--format",
+        "pipe",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s5-report-tsv",
+      "description": "One file per customer, ISO weeks across the new year",
+      "tool": "report",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [
+          "orders.tsv:9:",
+          "orders.tsv:10:",
+          "orders.tsv:11:"
+        ],
+        "files": {
+          "dir": "out",
+          "contents": {
+            "C1.txt": "customer\tC1\nweek\trevenue\n2026-W52\t10.00\n2026-W53\t23.75\nTOTAL\t33.75\n",
+            "C2.txt": "customer\tC2\nweek\trevenue\n2026-W53\t4.95\n2027-W01\t0.50\nTOTAL\t5.45\n",
+            "C%2F3.txt": "customer\tC/3\nweek\trevenue\n2026-W53\t7.00\nTOTAL\t7.00\n",
+            "C%2E1.txt": "customer\tC.1\nweek\trevenue\n2027-W01\t1.00\nTOTAL\t1.00\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "s5-report-csv",
+      "description": "Report from CSV, with an apostrophe in a customer id",
+      "tool": "report",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ],
+        "files": {
+          "dir": "out",
+          "contents": {
+            "C1.txt": "customer\tC1\nweek\trevenue\n2026-W09\t20.00\n2026-W10\t14.75\nTOTAL\t34.75\n",
+            "C2.txt": "customer\tC2\nweek\trevenue\n2026-W09\t4.95\n2026-W10\t6.50\nTOTAL\t11.45\n",
+            "C%273.txt": "customer\tC'3\nweek\trevenue\n2026-W10\t7.00\nTOTAL\t7.00\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "s5-report-json",
+      "description": "Report from JSON",
+      "tool": "report",
+      "args": [
+        "--input",
+        "orders.json",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [
+          "orders.json:#7:",
+          "orders.json:#8:"
+        ],
+        "files": {
+          "dir": "out",
+          "contents": {
+            "C1.txt": "customer\tC1\nweek\trevenue\n2026-W09\t20.00\n2026-W10\t14.75\nTOTAL\t34.75\n",
+            "C2.txt": "customer\tC2\nweek\trevenue\n2026-W09\t4.95\n2026-W10\t6.50\nTOTAL\t11.45\n",
+            "C%273.txt": "customer\tC'3\nweek\trevenue\n2026-W10\t7.00\nTOTAL\t7.00\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "s5-report-option-order",
+      "description": "Options in any order; --format",
+      "tool": "report",
+      "args": [
+        "--out-dir",
+        "out",
+        "--format",
+        "tsv",
+        "--input",
+        "orders.data"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [
+          "orders.data:9:",
+          "orders.data:10:",
+          "orders.data:11:"
+        ],
+        "files": {
+          "dir": "out",
+          "contents": {
+            "C1.txt": "customer\tC1\nweek\trevenue\n2026-W52\t10.00\n2026-W53\t23.75\nTOTAL\t33.75\n",
+            "C2.txt": "customer\tC2\nweek\trevenue\n2026-W53\t4.95\n2027-W01\t0.50\nTOTAL\t5.45\n",
+            "C%2F3.txt": "customer\tC/3\nweek\trevenue\n2026-W53\t7.00\nTOTAL\t7.00\n",
+            "C%2E1.txt": "customer\tC.1\nweek\trevenue\n2027-W01\t1.00\nTOTAL\t1.00\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "s5-report-nested-dir",
+      "description": "Creates the directory and its parents",
+      "tool": "report",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--out-dir",
+        "nested/a/b"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ],
+        "files": {
+          "dir": "nested",
+          "contents": {
+            "a/b/C1.txt": "customer\tC1\nweek\trevenue\n2026-W09\t20.00\n2026-W10\t14.75\nTOTAL\t34.75\n",
+            "a/b/C2.txt": "customer\tC2\nweek\trevenue\n2026-W09\t4.95\n2026-W10\t6.50\nTOTAL\t11.45\n",
+            "a/b/C%273.txt": "customer\tC'3\nweek\trevenue\n2026-W10\t7.00\nTOTAL\t7.00\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "s5-report-input-as-given",
+      "description": "Warnings name the input as given",
+      "tool": "report",
+      "args": [
+        "--input",
+        "./orders.tsv",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [
+          "./orders.tsv:9:",
+          "./orders.tsv:10:",
+          "./orders.tsv:11:"
+        ],
+        "files": {
+          "dir": "out",
+          "contents": {
+            "C1.txt": "customer\tC1\nweek\trevenue\n2026-W52\t10.00\n2026-W53\t23.75\nTOTAL\t33.75\n",
+            "C2.txt": "customer\tC2\nweek\trevenue\n2026-W53\t4.95\n2027-W01\t0.50\nTOTAL\t5.45\n",
+            "C%2F3.txt": "customer\tC/3\nweek\trevenue\n2026-W53\t7.00\nTOTAL\t7.00\n",
+            "C%2E1.txt": "customer\tC.1\nweek\trevenue\n2027-W01\t1.00\nTOTAL\t1.00\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "s5-report-no-records",
+      "description": "No valid records: no files",
+      "tool": "report",
+      "args": [
+        "--input",
+        "header.tsv",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [],
+        "files": {
+          "dir": "out",
+          "contents": {}
+        }
+      }
+    },
+    {
+      "id": "s5-report-bom",
+      "description": "Report from TSV with a byte-order mark",
+      "tool": "report",
+      "args": [
+        "--input",
+        "bom.tsv",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [],
+        "files": {
+          "dir": "out",
+          "contents": {
+            "B1.txt": "customer\tB1\nweek\trevenue\n2026-W10\t2.00\nTOTAL\t2.00\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "s5-report-utc",
+      "description": "Weeks do not depend on the machine's time zone",
+      "tool": "report",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--out-dir",
+        "out"
+      ],
+      "env": {
+        "TZ": "Pacific/Kiritimati"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [
+          "orders.tsv:9:",
+          "orders.tsv:10:",
+          "orders.tsv:11:"
+        ],
+        "files": {
+          "dir": "out",
+          "contents": {
+            "C1.txt": "customer\tC1\nweek\trevenue\n2026-W52\t10.00\n2026-W53\t23.75\nTOTAL\t33.75\n",
+            "C2.txt": "customer\tC2\nweek\trevenue\n2026-W53\t4.95\n2027-W01\t0.50\nTOTAL\t5.45\n",
+            "C%2F3.txt": "customer\tC/3\nweek\trevenue\n2026-W53\t7.00\nTOTAL\t7.00\n",
+            "C%2E1.txt": "customer\tC.1\nweek\trevenue\n2027-W01\t1.00\nTOTAL\t1.00\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "s5-report-fatal-no-out-dir",
+      "description": "--out-dir is required",
+      "tool": "report",
+      "args": [
+        "--input",
+        "orders.tsv"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true,
+        "files": {
+          "dir": "out",
+          "contents": {}
+        }
+      }
+    },
+    {
+      "id": "s5-report-fatal-no-input",
+      "description": "--input is required",
+      "tool": "report",
+      "args": [
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true,
+        "files": {
+          "dir": "out",
+          "contents": {}
+        }
+      }
+    },
+    {
+      "id": "s5-report-fatal-unknown-option",
+      "description": "Unknown option",
+      "tool": "report",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--out-dir",
+        "out",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true,
+        "files": {
+          "dir": "out",
+          "contents": {}
+        }
+      }
+    },
+    {
+      "id": "s5-report-fatal-missing-value",
+      "description": "Option without a value",
+      "tool": "report",
+      "args": [
+        "--out-dir",
+        "out",
+        "--input"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true,
+        "files": {
+          "dir": "out",
+          "contents": {}
+        }
+      }
+    },
+    {
+      "id": "s5-report-fatal-missing-file",
+      "description": "Input that cannot be read",
+      "tool": "report",
+      "args": [
+        "--input",
+        "missing.tsv",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true,
+        "files": {
+          "dir": "out",
+          "contents": {}
+        }
+      }
+    },
+    {
+      "id": "s5-report-fatal-missing-column",
+      "description": "TSV header missing a column",
+      "tool": "report",
+      "args": [
+        "--input",
+        "missing-column.tsv",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true,
+        "files": {
+          "dir": "out",
+          "contents": {}
+        }
+      }
+    },
+    {
+      "id": "s5-report-fatal-unknown-format",
+      "description": "Unknown format",
+      "tool": "report",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--format",
+        "pipe",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true,
+        "files": {
+          "dir": "out",
+          "contents": {}
+        }
+      }
+    },
+    {
+      "id": "s5-report-fatal-extension",
+      "description": "Extension that names no format",
+      "tool": "report",
+      "args": [
+        "--input",
+        "orders.pipe",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true,
+        "files": {
+          "dir": "out",
+          "contents": {}
+        }
+      }
+    },
+    {
+      "id": "s5-report-fatal-dir",
+      "description": "A directory that cannot be created",
+      "tool": "report",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--out-dir",
+        "blocker.txt/reports"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    }
+  ]
+}

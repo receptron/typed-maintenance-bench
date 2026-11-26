@@ -1,0 +1,52 @@
+{
+  "cases": [
+    {
+      "id": "s5-visible-tsv-day",
+      "description": "TSV by day",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-12-27\t10.00\n2026-12-28\t20.00\n2026-12-31\t4.95\n2027-01-01\t3.75\n2027-01-03\t7.00\n2027-01-04\t0.50\n2027-01-10\t1.00\nTOTAL\t47.20\n",
+        "stderrPrefixes": [
+          "orders.tsv:9:",
+          "orders.tsv:10:",
+          "orders.tsv:11:"
+        ]
+      }
+    },
+    {
+      "id": "s5-visible-report-tsv",
+      "description": "One file per customer, ISO weeks across the new year",
+      "tool": "report",
+      "args": [
+        "--input",
+        "orders.tsv",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [
+          "orders.tsv:9:",
+          "orders.tsv:10:",
+          "orders.tsv:11:"
+        ],
+        "files": {
+          "dir": "out",
+          "contents": {
+            "C1.txt": "customer\tC1\nweek\trevenue\n2026-W52\t10.00\n2026-W53\t23.75\nTOTAL\t33.75\n",
+            "C2.txt": "customer\tC2\nweek\trevenue\n2026-W53\t4.95\n2027-W01\t0.50\nTOTAL\t5.45\n",
+            "C%2F3.txt": "customer\tC/3\nweek\trevenue\n2026-W53\t7.00\nTOTAL\t7.00\n",
+            "C%2E1.txt": "customer\tC.1\nweek\trevenue\n2027-W01\t1.00\nTOTAL\t1.00\n"
+          }
+        }
+      }
+    }
+  ]
+}
