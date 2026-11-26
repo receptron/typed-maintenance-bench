@@ -1,0 +1,5 @@
+order_id,customer_id,order_date,sku,quantity,unit_price,discount,notes
+4001,顧客A,2026-04-01,りんご,1,1.00,,
+4002,顧客B,2026-04-01,みかん,2,1.00,,
+4003,顧客A,2026-04-01,apple,3,1.00,,
+4004,顧客B,2026-04-01,Zebra,4,1.00,,

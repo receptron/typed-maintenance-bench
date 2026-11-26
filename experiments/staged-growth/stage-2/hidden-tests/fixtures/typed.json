@@ -1,0 +1,65 @@
+[
+  {
+    "order_id": 1,
+    "customer_id": "C01",
+    "order_date": "2026-01-01",
+    "sku": "A",
+    "quantity": 1,
+    "unit_price": 0.05,
+    "discount": 0.5
+  },
+  {
+    "order_id": 2,
+    "customer_id": "C01",
+    "order_date": "2026-01-01",
+    "sku": "B",
+    "quantity": 3,
+    "unit_price": 0.01,
+    "discount": 0.5
+  },
+  {
+    "order_id": 3,
+    "customer_id": "C01",
+    "order_date": "2026-01-01",
+    "sku": "C",
+    "quantity": 1,
+    "unit_price": 0.33,
+    "discount": 0.15
+  },
+  {
+    "order_id": 4,
+    "customer_id": "C01",
+    "order_date": "2026-01-01",
+    "sku": "D",
+    "quantity": 7,
+    "unit_price": 19.99,
+    "discount": 0.07
+  },
+  {
+    "order_id": 5,
+    "customer_id": "C01",
+    "order_date": "2026-01-01",
+    "sku": "E",
+    "quantity": 1,
+    "unit_price": 1.15,
+    "discount": 0.5
+  },
+  {
+    "order_id": 6,
+    "customer_id": "C01",
+    "order_date": "2026-01-01",
+    "sku": "F",
+    "quantity": 2,
+    "unit_price": 5,
+    "discount": 1
+  },
+  {
+    "order_id": 7,
+    "customer_id": "C01",
+    "order_date": "2026-01-01",
+    "sku": "G",
+    "quantity": 5,
+    "unit_price": 0,
+    "discount": null
+  }
+]

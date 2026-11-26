@@ -1,0 +1,135 @@
+{
+  "cases": [
+    {
+      "id": "s1-basic-day",
+      "description": "Revenue by day; discounts; keys sorted",
+      "args": ["--input", "basic.csv", "--group-by", "day"],
+      "expect": { "exitCode": 0, "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n", "stderrPrefixes": [] }
+    },
+    {
+      "id": "s1-basic-sku",
+      "description": "Revenue by sku",
+      "args": ["--input", "basic.csv", "--group-by", "sku"],
+      "expect": { "exitCode": 0, "stdout": "sku\trevenue\nAPPLE\t13.80\nKIWI\t1.98\nPEAR\t2.25\nTOTAL\t18.03\n", "stderrPrefixes": [] }
+    },
+    {
+      "id": "s1-basic-customer",
+      "description": "Revenue by customer",
+      "args": ["--input", "basic.csv", "--group-by", "customer"],
+      "expect": { "exitCode": 0, "stdout": "customer\trevenue\nC01\t7.83\nC02\t10.20\nTOTAL\t18.03\n", "stderrPrefixes": [] }
+    },
+    {
+      "id": "s1-option-order",
+      "description": "Options in the other order",
+      "args": ["--group-by", "customer", "--input", "basic.csv"],
+      "expect": { "exitCode": 0, "stdout": "customer\trevenue\nC01\t7.83\nC02\t10.20\nTOTAL\t18.03\n", "stderrPrefixes": [] }
+    },
+    {
+      "id": "s1-rounding",
+      "description": "Integer cents with half-up rounding; values that go wrong in floating point (1.15 x 0.5, 19.99 x 7 x 0.93); 100% discount; zero price",
+      "args": ["--input", "rounding.csv", "--group-by", "sku"],
+      "expect": { "exitCode": 0, "stdout": "sku\trevenue\nA\t0.03\nB\t0.02\nC\t0.28\nD\t130.13\nE\t0.58\nF\t0.00\nG\t0.00\nTOTAL\t131.04\n", "stderrPrefixes": [] }
+    },
+    {
+      "id": "s1-quoting-sku",
+      "description": "BOM, CRLF, reordered and extra columns, quoted commas, doubled quotes, a line break inside a quoted field, trimming",
+      "args": ["--input", "quoting.csv", "--group-by", "sku"],
+      "expect": { "exitCode": 0, "stdout": "sku\trevenue\nBOLT\t1.00\nGADGET\t4.40\nWIDGET, LARGE\t20.00\nTOTAL\t25.40\n", "stderrPrefixes": ["quoting.csv:6:"] }
+    },
+    {
+      "id": "s1-quoting-customer",
+      "description": "Trimmed customer ids merge; the warning line counts the line break inside a quoted field",
+      "args": ["--input", "quoting.csv", "--group-by", "customer"],
+      "expect": { "exitCode": 0, "stdout": "customer\trevenue\nC10\t21.00\nC11\t4.40\nTOTAL\t25.40\n", "stderrPrefixes": ["quoting.csv:6:"] }
+    },
+    {
+      "id": "s1-invalid-sku",
+      "description": "Every validity rule, the duplicate rule (including a duplicate of an invalid record), a short record and an empty line",
+      "args": ["--input", "invalid.csv", "--group-by", "sku"],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\nA\t1.00\nB\t2.00\nC\t1.00\nTOTAL\t4.00\n",
+        "stderrPrefixes": ["invalid.csv:3:", "invalid.csv:4:", "invalid.csv:5:", "invalid.csv:6:", "invalid.csv:7:", "invalid.csv:8:", "invalid.csv:9:", "invalid.csv:10:", "invalid.csv:11:", "invalid.csv:12:", "invalid.csv:13:", "invalid.csv:14:", "invalid.csv:15:", "invalid.csv:16:", "invalid.csv:17:", "invalid.csv:20:", "invalid.csv:21:", "invalid.csv:22:", "invalid.csv:23:", "invalid.csv:25:"]
+      }
+    },
+    {
+      "id": "s1-invalid-day",
+      "description": "29 February in a leap year is valid",
+      "args": ["--input", "invalid.csv", "--group-by", "day"],
+      "expect": { "exitCode": 0, "stdout": "day\trevenue\n2026-03-01\t3.00\n2028-02-29\t1.00\nTOTAL\t4.00\n" }
+    },
+    {
+      "id": "s1-header-only",
+      "description": "No records",
+      "args": ["--input", "header-only.csv", "--group-by", "day"],
+      "expect": { "exitCode": 0, "stdout": "day\trevenue\nTOTAL\t0.00\n", "stderrPrefixes": [] }
+    },
+    {
+      "id": "s1-unicode-sku",
+      "description": "Code point order, not locale order",
+      "args": ["--input", "unicode.csv", "--group-by", "sku"],
+      "env": { "LANG": "ja_JP.UTF-8", "LC_ALL": "ja_JP.UTF-8" },
+      "expect": { "exitCode": 0, "stdout": "sku\trevenue\nZebra\t4.00\napple\t3.00\nみかん\t2.00\nりんご\t1.00\nTOTAL\t10.00\n", "stderrPrefixes": [] }
+    },
+    {
+      "id": "s1-unicode-customer",
+      "description": "Non-ASCII keys",
+      "args": ["--input", "unicode.csv", "--group-by", "customer"],
+      "expect": { "exitCode": 0, "stdout": "customer\trevenue\n顧客A\t4.00\n顧客B\t6.00\nTOTAL\t10.00\n", "stderrPrefixes": [] }
+    },
+    {
+      "id": "s1-large",
+      "description": "100,000 records within the time limit",
+      "args": ["--input", "large.csv", "--group-by", "sku"],
+      "expect": { "exitCode": 0, "stdout": "sku\trevenue\nS0\t333.34\nS1\t333.33\nS2\t333.33\nTOTAL\t1000.00\n", "stderrPrefixes": [] }
+    },
+    {
+      "id": "s1-input-as-given",
+      "description": "Warnings show the --input value exactly as given",
+      "args": ["--input", "./quoting.csv", "--group-by", "sku"],
+      "expect": { "exitCode": 0, "stderrPrefixes": ["./quoting.csv:6:"] }
+    },
+    {
+      "id": "s1-fatal-empty",
+      "description": "A file with no header line",
+      "args": ["--input", "empty.csv", "--group-by", "day"],
+      "expect": { "exitCode": 2, "stdout": "", "stderrNonEmpty": true }
+    },
+    {
+      "id": "s1-fatal-missing-column",
+      "description": "Header without unit_price",
+      "args": ["--input", "missing-column.csv", "--group-by", "day"],
+      "expect": { "exitCode": 2, "stdout": "", "stderrNonEmpty": true }
+    },
+    {
+      "id": "s1-fatal-missing-file",
+      "description": "Unreadable file",
+      "args": ["--input", "does-not-exist.csv", "--group-by", "day"],
+      "expect": { "exitCode": 2, "stdout": "", "stderrNonEmpty": true }
+    },
+    {
+      "id": "s1-fatal-bad-group",
+      "description": "Unknown --group-by value",
+      "args": ["--input", "basic.csv", "--group-by", "month"],
+      "expect": { "exitCode": 2, "stdout": "", "stderrNonEmpty": true }
+    },
+    {
+      "id": "s1-fatal-no-group",
+      "description": "Missing --group-by",
+      "args": ["--input", "basic.csv"],
+      "expect": { "exitCode": 2, "stdout": "", "stderrNonEmpty": true }
+    },
+    {
+      "id": "s1-fatal-no-input",
+      "description": "Missing --input",
+      "args": ["--group-by", "day"],
+      "expect": { "exitCode": 2, "stdout": "", "stderrNonEmpty": true }
+    },
+    {
+      "id": "s1-fatal-unknown-option",
+      "description": "Unknown option",
+      "args": ["--input", "basic.csv", "--group-by", "day", "--verbose"],
+      "expect": { "exitCode": 2, "stdout": "", "stderrNonEmpty": true }
+    }
+  ]
+}

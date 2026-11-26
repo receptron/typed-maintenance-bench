@@ -1,0 +1,27 @@
+- order_id: 7001
+  customer_id: C40
+  order_date: 2026-07-01
+  sku: A
+  quantity: 2
+  unit_price: 1.25
+- just a string
+- order_id: "7002"
+  customer_id: C40
+  order_date: "2026-07-32"
+  sku: A
+  quantity: 1
+  unit_price: 1
+- order_id: "7003"
+  customer_id: C41
+  order_date: 2026-07-02
+  sku: B
+  quantity: 3
+  unit_price: "0.10"
+  discount: 0.5
+- order_id: "7004"
+  customer_id: C41
+  order_date: 2026-07-02
+  sku: C
+  quantity: 1
+  unit_price: 1
+  discount: true

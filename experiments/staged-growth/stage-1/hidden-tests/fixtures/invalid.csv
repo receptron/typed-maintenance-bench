@@ -1,0 +1,26 @@
+order_id,customer_id,order_date,sku,quantity,unit_price,discount,notes
+3001,C20,2026-03-01,A,1,1.00,,ok
+,C20,2026-03-01,A,1,1.00,,missing order id
+3002,,2026-03-01,A,1,1.00,,missing customer
+3003,C20,2026-3-1,A,1,1.00,,bad date format
+3004,C20,2026-02-29,A,1,1.00,,not a leap year
+3005,C20,2026-03-01,,1,1.00,,missing sku
+3006,C20,2026-03-01,A,0,1.00,,zero quantity
+3007,C20,2026-03-01,A,-1,1.00,,negative quantity
+3008,C20,2026-03-01,A,1.5,1.00,,fractional quantity
+3009,C20,2026-03-01,A,1,"1,200",,thousands separator
+3010,C20,2026-03-01,A,1,$1.00,,currency symbol
+3011,C20,2026-03-01,A,1,1.005,,three decimals
+3012,C20,2026-03-01,A,1,1.00,1.5,discount above 1
+3013,C20,2026-03-01,A,1,1.00,0.155,discount three decimals
+3001,C20,2026-03-02,A,1,1.00,,duplicate of line 2
+3014,C20,2026-03-01,A,1
+
+3015,C21,2028-02-29,B,2,0.50,,leap year
+3016,C20,2026-03-01,A,1e2,1.00,,exponent
+3017,C20,2026-03-01,A,1,-1.00,,negative price
+3018,C20,2026-03-01,A,1,1.00,-0.1,negative discount
+3019,C20,2026-13-01,A,1,1.00,,month 13
+3001,C20,2026-03-01,B,1,1.00,,same order other sku
+3020,C20,2026-03-01,C,0,1.00,,invalid first occurrence
+3020,C20,2026-03-01,C,1,1.00,,valid because the earlier one was invalid

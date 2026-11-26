@@ -1,0 +1,554 @@
+{
+  "cases": [
+    {
+      "id": "s2-json-day",
+      "description": "JSON array of string values",
+      "args": [
+        "--input",
+        "basic.json",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-json-sku",
+      "description": "JSON by sku",
+      "args": [
+        "--input",
+        "basic.json",
+        "--group-by",
+        "sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\nAPPLE\t13.80\nKIWI\t1.98\nPEAR\t2.25\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-jsonl-day",
+      "description": "JSON Lines",
+      "args": [
+        "--input",
+        "basic.jsonl",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-yaml-day",
+      "description": "YAML with unquoted dates and numbers",
+      "args": [
+        "--input",
+        "basic.yaml",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-yaml-day-honolulu",
+      "description": "YAML dates must not shift in a time zone behind UTC",
+      "args": [
+        "--input",
+        "basic.yaml",
+        "--group-by",
+        "day"
+      ],
+      "env": {
+        "TZ": "Pacific/Honolulu"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-yaml-day-tokyo",
+      "description": "YAML dates must not shift in a time zone ahead of UTC",
+      "args": [
+        "--input",
+        "basic.yaml",
+        "--group-by",
+        "day"
+      ],
+      "env": {
+        "TZ": "Asia/Tokyo"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-yaml-sku",
+      "description": "YAML numbers 1.20 and 0.10 read as 1.2 and 0.1",
+      "args": [
+        "--input",
+        "basic.yaml",
+        "--group-by",
+        "sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\nAPPLE\t13.80\nKIWI\t1.98\nPEAR\t2.25\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-xlsx-day",
+      "description": "XLSX date cells and numeric cells",
+      "args": [
+        "--input",
+        "basic.xlsx",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-xlsx-day-honolulu",
+      "description": "XLSX dates must not shift in a time zone behind UTC",
+      "args": [
+        "--input",
+        "basic.xlsx",
+        "--group-by",
+        "day"
+      ],
+      "env": {
+        "TZ": "Pacific/Honolulu"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-xlsx-day-tokyo",
+      "description": "XLSX dates must not shift in a time zone ahead of UTC",
+      "args": [
+        "--input",
+        "basic.xlsx",
+        "--group-by",
+        "day"
+      ],
+      "env": {
+        "TZ": "Asia/Tokyo"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-xlsx-customer",
+      "description": "XLSX by customer",
+      "args": [
+        "--input",
+        "basic.xlsx",
+        "--group-by",
+        "customer"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "customer\trevenue\nC01\t7.83\nC02\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-bom-json",
+      "description": "JSON with a byte-order mark",
+      "args": [
+        "--input",
+        "bom.json",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-extension-case",
+      "description": "Extension is matched ignoring case",
+      "args": [
+        "--input",
+        "BASIC.CSV",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-format-csv-txt",
+      "description": "--format csv on a .txt file",
+      "args": [
+        "--input",
+        "basic.txt",
+        "--group-by",
+        "day",
+        "--format",
+        "csv"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-format-json-dat",
+      "description": "--format json on a .dat file",
+      "args": [
+        "--input",
+        "basic.dat",
+        "--group-by",
+        "day",
+        "--format",
+        "json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-format-before-input",
+      "description": "--format given before --input",
+      "args": [
+        "--format",
+        "json",
+        "--group-by",
+        "day",
+        "--input",
+        "basic.dat"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-format-overrides-extension",
+      "description": "--format csv on JSON content: the header has no required columns",
+      "args": [
+        "--input",
+        "basic.json",
+        "--group-by",
+        "day",
+        "--format",
+        "csv"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s2-typed-json-rounding",
+      "description": "JSON numbers that go wrong in floating point",
+      "args": [
+        "--input",
+        "typed.json",
+        "--group-by",
+        "sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\nA\t0.03\nB\t0.02\nC\t0.28\nD\t130.13\nE\t0.58\nF\t0.00\nG\t0.00\nTOTAL\t131.04\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-invalid-json",
+      "description": "Non-object elements, wrong types, booleans, objects, null as empty, a number id duplicating nothing, exponent numbers",
+      "args": [
+        "--input",
+        "invalid.json",
+        "--group-by",
+        "sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\nA\t2.00\nB\t2.70\nD\t100.00\nE\t0.10\nTOTAL\t104.80\n",
+        "stderrPrefixes": [
+          "invalid.json:#2:",
+          "invalid.json:#3:",
+          "invalid.json:#4:",
+          "invalid.json:#5:",
+          "invalid.json:#6:",
+          "invalid.json:#7:",
+          "invalid.json:#8:",
+          "invalid.json:#9:",
+          "invalid.json:#10:",
+          "invalid.json:#11:",
+          "invalid.json:#13:",
+          "invalid.json:#14:"
+        ]
+      }
+    },
+    {
+      "id": "s2-invalid-jsonl",
+      "description": "Bad lines, an empty line, a non-object line, a duplicate",
+      "args": [
+        "--input",
+        "invalid.jsonl",
+        "--group-by",
+        "sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\nA\t1.00\nB\t1.00\nTOTAL\t2.00\n",
+        "stderrPrefixes": [
+          "invalid.jsonl:2:",
+          "invalid.jsonl:4:",
+          "invalid.jsonl:5:",
+          "invalid.jsonl:7:",
+          "invalid.jsonl:8:"
+        ]
+      }
+    },
+    {
+      "id": "s2-invalid-yaml",
+      "description": "Non-mapping element, impossible date, boolean discount; dates in a time zone behind UTC",
+      "args": [
+        "--input",
+        "invalid.yaml",
+        "--group-by",
+        "day"
+      ],
+      "env": {
+        "TZ": "Pacific/Honolulu"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-07-01\t2.50\n2026-07-02\t0.15\nTOTAL\t2.65\n",
+        "stderrPrefixes": [
+          "invalid.yaml:#2:",
+          "invalid.yaml:#3:",
+          "invalid.yaml:#5:"
+        ]
+      }
+    },
+    {
+      "id": "s2-invalid-xlsx",
+      "description": "Empty row skipped, fractional quantity, three-decimal price, a string id duplicating a number id; dates ahead of UTC",
+      "args": [
+        "--input",
+        "invalid.xlsx",
+        "--group-by",
+        "day"
+      ],
+      "env": {
+        "TZ": "Asia/Tokyo"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-08-01\t3.00\n2026-08-02\t2.25\nTOTAL\t5.25\n",
+        "stderrPrefixes": [
+          "invalid.xlsx:4:",
+          "invalid.xlsx:6:",
+          "invalid.xlsx:7:"
+        ]
+      }
+    },
+    {
+      "id": "s2-fatal-json-syntax",
+      "description": "Truncated JSON",
+      "args": [
+        "--input",
+        "syntax.json",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s2-fatal-json-object",
+      "description": "Top-level JSON object",
+      "args": [
+        "--input",
+        "object.json",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s2-fatal-yaml-syntax",
+      "description": "Invalid YAML",
+      "args": [
+        "--input",
+        "syntax.yaml",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s2-fatal-yaml-mapping",
+      "description": "Top-level YAML mapping",
+      "args": [
+        "--input",
+        "mapping.yaml",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s2-fatal-xlsx-broken",
+      "description": "Text file named .xlsx",
+      "args": [
+        "--input",
+        "broken.xlsx",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s2-fatal-xlsx-noheader",
+      "description": "Worksheet with no rows",
+      "args": [
+        "--input",
+        "noheader.xlsx",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s2-fatal-xlsx-missing-column",
+      "description": "XLSX header without quantity",
+      "args": [
+        "--input",
+        "missing-column.xlsx",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s2-fatal-latin1-csv",
+      "description": "CSV that is not UTF-8",
+      "args": [
+        "--input",
+        "latin1.csv",
+        "--group-by",
+        "sku"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s2-fatal-latin1-json",
+      "description": "JSON that is not UTF-8",
+      "args": [
+        "--input",
+        "latin1.json",
+        "--group-by",
+        "sku"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s2-fatal-unknown-extension",
+      "description": "Unknown extension without --format",
+      "args": [
+        "--input",
+        "basic.dat",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    },
+    {
+      "id": "s2-fatal-unknown-format",
+      "description": "Unknown --format value",
+      "args": [
+        "--input",
+        "basic.json",
+        "--group-by",
+        "day",
+        "--format",
+        "xml"
+      ],
+      "expect": {
+        "exitCode": 2,
+        "stdout": "",
+        "stderrNonEmpty": true
+      }
+    }
+  ]
+}
