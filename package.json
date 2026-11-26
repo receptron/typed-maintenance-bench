@@ -29,6 +29,7 @@
     "check:reference": "node dist/src/checkReference.js",
     "grade": "node dist/src/gradeCli.js",
     "escapes": "node dist/src/escapesCli.js",
+    "summarize": "node dist/src/summarizeCli.js",
     "bench": "node dist/src/runCli.js"
   }
 }
