@@ -1,0 +1,2 @@
+order_id,customer_id,order_date,sku,quantity,unit_price,discount,notes
+9001,C01,2026-01-01,café,1,1.00,,

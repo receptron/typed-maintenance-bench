@@ -64,11 +64,17 @@ Each arm runs in two modes: **cumulative** (each stage builds on that arm's own 
 
 ### Status
 
-Design stage. Nothing has been run yet. The harness and the hidden tests are the next pieces of work.
+Stages 1–2 are runnable for the pilot arms (`js`, `ts`, `ts-noany`), in both modes. The harness passes its self-test (the reference implementation passes every hidden case in every arm and mode). No agent has been run yet, so there are no results.
 
 ### Reproducing
 
-Once the harness exists, a run will be one command per (experiment, arm, mode, repeat), and every report will name the command and the commit it was produced from. Until then, the protocol is the thing to review.
+```
+yarn install && yarn build
+yarn check:reference                                   # harness self-test, no API calls
+ANTHROPIC_API_KEY=... yarn bench --arm ts --mode cumulative --repeat r1
+```
+
+Each run writes one directory per stage under `results/`, with the transcript, the diff, the grade and the final tree. Every report will name the command and the commit it was produced from. Details: [src/README.md](src/README.md).
 
 ### Discussing
 
@@ -132,11 +138,17 @@ Evil Martians は、[型のエラーを直す時間はコーディングエー�
 
 ### 現状
 
-設計の段階です。まだ何も実行していません。次に作るのは、ハーネスと隠したテストです。
+段階 1〜2 を、小さく試す組（`js`、`ts`、`ts-noany`）で、2 つの進め方の両方で走らせられます。ハーネスは自己確認に通っています（参照実装が、全組・全進め方で、隠したテストにすべて通る）。エージェントはまだ走らせていないので、結果はまだありません。
 
 ### 再現する
 
-ハーネスができたら、1 回の実行は（実験、組、進め方、繰り返しの番号）ごとに 1 つのコマンドになります。どのレポートにも、それを作ったコマンドとコミットを書きます。それまでは、実験の手順を読んで検討してもらうのが一番の参加の仕方です。
+```
+yarn install && yarn build
+yarn check:reference                                   # ハーネスの自己確認。API は呼ばない
+ANTHROPIC_API_KEY=... yarn bench --arm ts --mode cumulative --repeat r1
+```
+
+1 回の実行で、段階ごとに 1 つのディレクトリが `results/` の下にでき、エージェントのやり取りの記録、変更の差分、採点、最後のコードが残ります。どのレポートにも、それを作ったコマンドとコミットを書きます。詳しくは [src/README.md](src/README.md)。
 
 ### 議論する
 

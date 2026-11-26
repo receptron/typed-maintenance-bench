@@ -1,0 +1,2 @@
+order_id,customer_id,order_date,sku,quantity,discount,notes
+1,C,2026-01-01,A,1,,

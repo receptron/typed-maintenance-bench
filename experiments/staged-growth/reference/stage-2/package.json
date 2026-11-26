@@ -1,0 +1,9 @@
+{
+  "name": "orders-reference-stage-2",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "exceljs": "4.4.0",
+    "yaml": "2.9.1"
+  }
+}

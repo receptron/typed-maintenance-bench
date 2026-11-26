@@ -1,0 +1,113 @@
+[
+  {
+    "order_id": "5001",
+    "customer_id": "C30",
+    "order_date": "2026-06-01",
+    "sku": "A",
+    "quantity": 1,
+    "unit_price": 2
+  },
+  5,
+  "text",
+  null,
+  [
+    1,
+    2
+  ],
+  {
+    "order_id": "5010",
+    "customer_id": "C30",
+    "order_date": "2026-06-01",
+    "sku": "X",
+    "quantity": 2.5,
+    "unit_price": 2
+  },
+  {
+    "order_id": "5011",
+    "customer_id": "C30",
+    "order_date": "2026-06-01",
+    "sku": "X",
+    "quantity": true,
+    "unit_price": 2
+  },
+  {
+    "order_id": "5012",
+    "customer_id": "C30",
+    "order_date": "2026-06-01",
+    "sku": "X",
+    "quantity": 1,
+    "unit_price": 19.999
+  },
+  {
+    "order_id": "5013",
+    "customer_id": "C30",
+    "order_date": 20260601,
+    "sku": "X",
+    "quantity": 1,
+    "unit_price": 2
+  },
+  {
+    "order_id": "5014",
+    "customer_id": null,
+    "order_date": "2026-06-01",
+    "sku": "X",
+    "quantity": 1,
+    "unit_price": 2
+  },
+  {
+    "order_id": "5001",
+    "customer_id": "C30",
+    "order_date": "2026-06-01",
+    "sku": "A",
+    "quantity": 1,
+    "unit_price": 2
+  },
+  {
+    "order_id": 5002,
+    "customer_id": "C30",
+    "order_date": "2026-06-01",
+    "sku": "B",
+    "quantity": "2",
+    "unit_price": "1.50",
+    "discount": 0.1
+  },
+  {
+    "order_id": "5003",
+    "customer_id": "C30",
+    "order_date": "2026-06-01",
+    "sku": "X",
+    "quantity": 1,
+    "unit_price": {
+      "amount": 1
+    }
+  },
+  {
+    "order_id": "5004",
+    "customer_id": "C30",
+    "order_date": "2026-06-01",
+    "sku": "X",
+    "quantity": 1,
+    "unit_price": 2,
+    "discount": null,
+    "notes": {
+      "x": 1
+    }
+  },
+  {
+    "order_id": "5005",
+    "customer_id": "C30",
+    "order_date": "2026-06-01",
+    "sku": "D",
+    "quantity": 1,
+    "unit_price": 100
+  },
+  {
+    "order_id": "5006",
+    "customer_id": "C30",
+    "order_date": "2026-06-01",
+    "sku": "E",
+    "quantity": 1,
+    "unit_price": 0.1,
+    "discount": 0.01
+  }
+]

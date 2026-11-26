@@ -1,0 +1,6 @@
+﻿sku,notes,order_id,extra,customer_id,order_date,quantity,unit_price,discount
+"WIDGET, LARGE","said ""hi""",2001,x,C10,2026-02-01,2,10.00,
+GADGET,"line one
+line two",2002,y,C11,2026-02-01,1,5.5,0.2
+  BOLT  ,,2003,z,  C10 ,2026-02-02, 4 , 0.25 ,
+NUT,,2004,w,C12,2026-02-30,1,1.00,
