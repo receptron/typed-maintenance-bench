@@ -1,0 +1,10 @@
+{
+  "name": "orders",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "fflate": "^0.8.3",
+    "yaml": "^2.9.1"
+  }
+}

@@ -1,0 +1,640 @@
+diff --git a/package.json b/package.json
+index 54997fa..5fbf5bb 100644
+--- a/package.json
++++ b/package.json
+@@ -12,5 +12,9 @@
+     "eslint": "10.15.0",
+     "typescript": "6.0.3",
+     "typescript-eslint": "8.74.0"
++  },
++  "dependencies": {
++    "fflate": "^0.8.3",
++    "yaml": "^2.9.1"
+   }
+ }
+diff --git a/src/cli.ts b/src/cli.ts
+index b4c75d1..ed1288f 100644
+--- a/src/cli.ts
++++ b/src/cli.ts
+@@ -1,7 +1,12 @@
+ import { readFileSync } from "node:fs";
++import { parse as parseYaml } from "yaml";
++import { readXlsx } from "./xlsx.js";
++import { decimalOf, type Val } from "./values.js";
+ 
+ type Rec = { line: number; fields: string[]; error?: string };
+ 
++type Row = { loc: string; vals?: Map<string, Val>; error?: string };
++
+ const isBlank = (c: string): boolean => c === " " || c === "\t";
+ 
+ const trim = (s: string): string => {
+@@ -91,17 +96,36 @@ const fail = (msg: string): never => {
+   process.exit(2);
+ };
+ 
+-const parseArgs = (argv: string[]): { input: string; groupBy: string } => {
++type Format = "csv" | "json" | "jsonl" | "yaml" | "xlsx";
++
++const isFormat = (s: string): s is Format => s === "csv" || s === "json" || s === "jsonl" || s === "yaml" || s === "xlsx";
++
++const formatFromName = (name: string): Format | undefined => {
++  const base = name.slice(name.lastIndexOf("/") + 1);
++  const dot = base.lastIndexOf(".");
++  if (dot < 0) return undefined;
++  const ext = base.slice(dot + 1).toLowerCase();
++  if (ext === "csv" || ext === "json" || ext === "jsonl" || ext === "xlsx") return ext;
++  if (ext === "ndjson") return "jsonl";
++  if (ext === "yaml" || ext === "yml") return "yaml";
++  return undefined;
++};
++
++const parseArgs = (argv: string[]): { input: string; groupBy: string; format: Format } => {
+   let input: string | undefined;
+   let groupBy: string | undefined;
++  let fmtArg: string | undefined;
+   for (let i = 0; i < argv.length; i += 2) {
+     const opt = argv[i];
+     const val = argv[i + 1];
+-    if (opt !== "--input" && opt !== "--group-by") return fail(`unknown option: ${opt ?? ""}`);
++    if (opt !== "--input" && opt !== "--group-by" && opt !== "--format") return fail(`unknown option: ${opt ?? ""}`);
+     if (val === undefined) return fail(`missing value for ${opt}`);
+     if (opt === "--input") {
+       if (input !== undefined) return fail("duplicate --input");
+       input = val;
++    } else if (opt === "--format") {
++      if (fmtArg !== undefined) return fail("duplicate --format");
++      fmtArg = val;
+     } else {
+       if (groupBy !== undefined) return fail("duplicate --group-by");
+       groupBy = val;
+@@ -110,7 +134,15 @@ const parseArgs = (argv: string[]): { input: string; groupBy: string } => {
+   if (input === undefined) return fail("missing --input");
+   if (groupBy === undefined) return fail("missing --group-by");
+   if (groupBy !== "day" && groupBy !== "sku" && groupBy !== "customer") return fail(`invalid --group-by: ${groupBy}`);
+-  return { input, groupBy };
++  let format: Format | undefined;
++  if (fmtArg !== undefined) {
++    if (!isFormat(fmtArg)) return fail(`invalid --format: ${fmtArg}`);
++    format = fmtArg;
++  } else {
++    format = formatFromName(input);
++    if (format === undefined) return fail(`cannot determine format of ${input}`);
++  }
++  return { input, groupBy, format };
+ };
+ 
+ const validDate = (s: string): boolean => {
+@@ -150,15 +182,43 @@ const cmp = (a: string, b: string): number => {
+   return x.length - y.length;
+ };
+ 
+-const main = (): void => {
+-  const { input, groupBy } = parseArgs(process.argv.slice(2));
+-  let text: string;
++const REQUIRED = ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price"];
++const FIELDS = [...REQUIRED, "discount", "notes"];
++
++const decodeUtf8 = (buf: Buffer): string => {
+   try {
+-    text = readFileSync(input).toString("utf8");
+-  } catch (e) {
+-    return fail(`cannot read ${input}: ${e instanceof Error ? e.message : String(e)}`);
++    return new TextDecoder("utf-8", { fatal: true }).decode(buf);
++  } catch {
++    return fail("input is not valid UTF-8");
++  }
++};
++
++const toVal = (v: unknown): Val => {
++  if (v === undefined || v === null) return { t: "empty" };
++  if (typeof v === "string") {
++    const s = trim(v);
++    return s === "" ? { t: "empty" } : { t: "str", s };
++  }
++  if (typeof v === "number") {
++    const s = decimalOf(v);
++    return s === undefined ? { t: "bad" } : { t: "num", s };
+   }
+-  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
++  if (v instanceof Date) {
++    return Number.isNaN(v.getTime()) ? { t: "bad" } : { t: "date", s: v.toISOString().slice(0, 10) };
++  }
++  return { t: "bad" };
++};
++
++const isObject = (v: unknown): v is object => typeof v === "object" && v !== null && !Array.isArray(v) && !(v instanceof Date);
++
++const objectRow = (loc: string, v: unknown): Row => {
++  if (!isObject(v)) return { loc, error: "record is not an object" };
++  const vals = new Map<string, Val>();
++  for (const [k, x] of Object.entries(v)) vals.set(k, toVal(x));
++  return { loc, vals };
++};
++
++const csvRows = (text: string): Row[] => {
+   const recs = parseCsv(text);
+   const header = recs[0];
+   if (!header) return fail("no header line");
+@@ -166,53 +226,159 @@ const main = (): void => {
+   header.fields.forEach((name, idx) => {
+     if (!col.has(name)) col.set(name, idx);
+   });
+-  const required = ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price"];
+-  for (const r of required) if (!col.has(r)) return fail(`header missing column: ${r}`);
+-  const get = (f: string[], name: string): string => {
+-    const idx = col.get(name);
+-    return idx === undefined ? "" : (f[idx] ?? "");
+-  };
++  for (const r of REQUIRED) if (!col.has(r)) return fail(`header missing column: ${r}`);
++  return recs.slice(1).map((rec): Row => {
++    const loc = String(rec.line);
++    if (rec.error !== undefined) return { loc, error: rec.error };
++    if (rec.fields.length < header.fields.length) return { loc, error: "too few fields" };
++    const vals = new Map<string, Val>();
++    for (const name of FIELDS) {
++      const idx = col.get(name);
++      const s = idx === undefined ? "" : (rec.fields[idx] ?? "");
++      vals.set(name, s === "" ? { t: "empty" } : { t: "str", s });
++    }
++    return { loc, vals };
++  });
++};
++
++const jsonRows = (text: string): Row[] => {
++  let data: unknown;
++  try {
++    data = JSON.parse(text);
++  } catch {
++    return fail("invalid JSON");
++  }
++  if (!Array.isArray(data)) return fail("top-level JSON value is not an array");
++  return data.map((v: unknown, i): Row => objectRow(`#${i + 1}`, v));
++};
++
++const jsonlRows = (text: string): Row[] => {
++  const out: Row[] = [];
++  text.split("\n").forEach((line, i) => {
++    if (trim(line.replace(/\r$/, "")) === "") return;
++    const loc = String(i + 1);
++    let v: unknown;
++    try {
++      v = JSON.parse(line);
++    } catch {
++      out.push({ loc, error: "invalid JSON" });
++      return;
++    }
++    out.push(objectRow(loc, v));
++  });
++  return out;
++};
++
++const yamlRows = (text: string): Row[] => {
++  let data: unknown;
++  try {
++    data = parseYaml(text, { customTags: ["timestamp"] });
++  } catch {
++    return fail("invalid YAML");
++  }
++  if (!Array.isArray(data)) return fail("top-level YAML value is not a sequence");
++  return data.map((v: unknown, i): Row => objectRow(`#${i + 1}`, v));
++};
++
++const cellName = (v: Val | undefined): string | undefined => (v && (v.t === "str" || v.t === "num") ? trim(v.s) : undefined);
++
++const xlsxRows = (buf: Buffer): Row[] => {
++  let sheet: ReturnType<typeof readXlsx>;
++  try {
++    sheet = readXlsx(new Uint8Array(buf));
++  } catch {
++    return fail("cannot open workbook");
++  }
++  const head = sheet.rows.get(1);
++  if (!head) return fail("no header row");
++  const col = new Map<string, number>();
++  for (const [ci, v] of head) {
++    const name = cellName(v);
++    if (name !== undefined && !col.has(name)) col.set(name, ci);
++  }
++  for (const r of REQUIRED) if (!col.has(r)) return fail(`header missing column: ${r}`);
++  const out: Row[] = [];
++  for (const rn of [...sheet.rows.keys()].filter((k) => k > 1).sort((a, b) => a - b)) {
++    const cells = sheet.rows.get(rn);
++    if (!cells) continue;
++    const vals = new Map<string, Val>();
++    for (const name of FIELDS) {
++      const idx = col.get(name);
++      const v = idx === undefined ? undefined : cells.get(idx);
++      if (v === undefined) vals.set(name, { t: "empty" });
++      else if (v.t === "str") {
++        const s = trim(v.s);
++        vals.set(name, s === "" ? { t: "empty" } : { t: "str", s });
++      } else vals.set(name, v);
++    }
++    out.push({ loc: String(rn), vals });
++  }
++  return out;
++};
++
++const main = (): void => {
++  const { input, groupBy, format } = parseArgs(process.argv.slice(2));
++  let buf: Buffer;
++  try {
++    buf = readFileSync(input);
++  } catch (e) {
++    return fail(`cannot read ${input}: ${e instanceof Error ? e.message : String(e)}`);
++  }
++  let rows: Row[];
++  if (format === "xlsx") rows = xlsxRows(buf);
++  else {
++    let text = decodeUtf8(buf);
++    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
++    rows = format === "csv" ? csvRows(text) : format === "json" ? jsonRows(text) : format === "jsonl" ? jsonlRows(text) : yamlRows(text);
++  }
+ 
+   const seen = new Set<string>();
+   const totals = new Map<string, bigint>();
+   let total = 0n;
+   const keyCol = groupBy === "day" ? "order_date" : groupBy === "sku" ? "sku" : "customer_id";
+ 
+-  for (const rec of recs.slice(1)) {
++  for (const rec of rows) {
+     const reject = (reason: string): void => {
+-      process.stderr.write(`${input}:${rec.line}: ${reason}\n`);
++      process.stderr.write(`${input}:${rec.loc}: ${reason}\n`);
+     };
+-    if (rec.error !== undefined) {
+-      reject(rec.error);
++    if (rec.error !== undefined || rec.vals === undefined) {
++      reject(rec.error ?? "invalid record");
+       continue;
+     }
+-    const f = rec.fields;
+-    if (f.length < header.fields.length) {
+-      reject("too few fields");
+-      continue;
+-    }
+-    const orderId = get(f, "order_id");
+-    const sku = get(f, "sku");
+-    if (orderId === "") { reject("empty order_id"); continue; }
+-    if (get(f, "customer_id") === "") { reject("empty customer_id"); continue; }
+-    if (!validDate(get(f, "order_date"))) { reject("invalid order_date"); continue; }
+-    if (sku === "") { reject("empty sku"); continue; }
+-    const qs = get(f, "quantity");
+-    if (!/^\d+$/.test(qs) || BigInt(qs) < 1n) { reject("invalid quantity"); continue; }
+-    const price = parseHundredths(get(f, "unit_price"));
++    const vals = rec.vals;
++    // text of a field; undefined when the value's type is not allowed
++    const text = (name: string): string | undefined => {
++      const v = vals.get(name);
++      if (v === undefined || v.t === "empty") return "";
++      return v.t === "str" || v.t === "num" ? v.s : undefined;
++    };
++    const orderId = text("order_id");
++    if (orderId === undefined || orderId === "") { reject("empty order_id"); continue; }
++    const customer = text("customer_id");
++    if (customer === undefined || customer === "") { reject("empty customer_id"); continue; }
++    const dv = vals.get("order_date");
++    const date = dv === undefined ? "" : dv.t === "str" || dv.t === "date" ? dv.s : "";
++    if (!validDate(date)) { reject("invalid order_date"); continue; }
++    const sku = text("sku");
++    if (sku === undefined || sku === "") { reject("empty sku"); continue; }
++    const qs = text("quantity");
++    if (qs === undefined || !/^\d+$/.test(qs) || BigInt(qs) < 1n) { reject("invalid quantity"); continue; }
++    const price = parseHundredths(text("unit_price") ?? "");
+     if (price === undefined) { reject("invalid unit_price"); continue; }
+-    const ds = get(f, "discount");
++    const ds = text("discount");
+     let pct = 0n;
++    if (ds === undefined) { reject("invalid discount"); continue; }
+     if (ds !== "") {
+       const d = parseHundredths(ds);
+       if (d === undefined || d > 100n) { reject("invalid discount"); continue; }
+       pct = d;
+     }
++    if (text("notes") === undefined) { reject("invalid notes"); continue; }
+     const dupKey = JSON.stringify([orderId, sku]);
+     if (seen.has(dupKey)) { reject("duplicate (order_id, sku)"); continue; }
+     seen.add(dupKey);
+     const rev = (price * BigInt(qs) * (100n - pct) + 50n) / 100n;
+-    const key = get(f, keyCol);
++    const key = keyCol === "order_date" ? date : keyCol === "sku" ? sku : customer;
+     totals.set(key, (totals.get(key) ?? 0n) + rev);
+     total += rev;
+   }
+diff --git a/src/values.ts b/src/values.ts
+new file mode 100644
+index 0000000..133e5e9
+--- /dev/null
++++ b/src/values.ts
+@@ -0,0 +1,23 @@
++export type Val =
++  | { t: "empty" }
++  | { t: "str"; s: string }
++  | { t: "num"; s: string }
++  | { t: "date"; s: string }
++  | { t: "bad" };
++
++// shortest decimal form of a finite number, never in exponent notation
++export const decimalOf = (n: number): string | undefined => {
++  if (!Number.isFinite(n)) return undefined;
++  if (n === 0) return "0";
++  const m = /^(-?)(\d)(?:\.(\d+))?e([+-]\d+)$/.exec(n.toExponential());
++  if (!m) return undefined;
++  const sign = m[1] ?? "";
++  const digits = `${m[2] ?? ""}${m[3] ?? ""}`;
++  const exp = Number(m[4]);
++  const pointPos = 1 + exp;
++  let body: string;
++  if (pointPos <= 0) body = `0.${"0".repeat(-pointPos)}${digits}`;
++  else if (pointPos >= digits.length) body = digits + "0".repeat(pointPos - digits.length);
++  else body = `${digits.slice(0, pointPos)}.${digits.slice(pointPos)}`;
++  return sign + body;
++};
+diff --git a/src/xlsx.ts b/src/xlsx.ts
+new file mode 100644
+index 0000000..c32bb06
+--- /dev/null
++++ b/src/xlsx.ts
+@@ -0,0 +1,253 @@
++import { unzipSync } from "fflate";
++import { decimalOf, type Val } from "./values.js";
++
++type El = { name: string; attrs: Map<string, string>; kids: El[]; text: string };
++
++const decodeEntities = (s: string): string =>
++  s
++    .replace(/&(#x[0-9a-fA-F]+|#\d+|amp|lt|gt|quot|apos);/g, (m, e: string) => {
++      if (e === "amp") return "&";
++      if (e === "lt") return "<";
++      if (e === "gt") return ">";
++      if (e === "quot") return '"';
++      if (e === "apos") return "'";
++      const cp = e.startsWith("#x") ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
++      return cp >= 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : m;
++    })
++    .replace(/_x([0-9a-fA-F]{4})_/g, (_m, h: string) => String.fromCharCode(parseInt(h, 16)));
++
++const localName = (n: string): string => {
++  const i = n.indexOf(":");
++  return i < 0 ? n : n.slice(i + 1);
++};
++
++const parseXml = (xml: string): El => {
++  const root: El = { name: "#root", attrs: new Map(), kids: [], text: "" };
++  const stack: El[] = [root];
++  const top = (): El => stack[stack.length - 1] ?? root;
++  let i = 0;
++  const n = xml.length;
++  while (i < n) {
++    const lt = xml.indexOf("<", i);
++    if (lt < 0) {
++      top().text += decodeEntities(xml.slice(i));
++      break;
++    }
++    if (lt > i) top().text += decodeEntities(xml.slice(i, lt));
++    if (xml.startsWith("<!--", lt)) {
++      const e = xml.indexOf("-->", lt + 4);
++      if (e < 0) throw new Error("bad xml");
++      i = e + 3;
++    } else if (xml.startsWith("<![CDATA[", lt)) {
++      const e = xml.indexOf("]]>", lt + 9);
++      if (e < 0) throw new Error("bad xml");
++      top().text += xml.slice(lt + 9, e);
++      i = e + 3;
++    } else if (xml.startsWith("<?", lt)) {
++      const e = xml.indexOf("?>", lt + 2);
++      if (e < 0) throw new Error("bad xml");
++      i = e + 2;
++    } else if (xml.startsWith("<!", lt)) {
++      const e = xml.indexOf(">", lt + 2);
++      if (e < 0) throw new Error("bad xml");
++      i = e + 1;
++    } else if (xml.startsWith("</", lt)) {
++      const e = xml.indexOf(">", lt + 2);
++      if (e < 0 || stack.length < 2) throw new Error("bad xml");
++      stack.pop();
++      i = e + 1;
++    } else {
++      let j = lt + 1;
++      let quote = "";
++      while (j < n) {
++        const c = xml.charAt(j);
++        if (quote !== "") {
++          if (c === quote) quote = "";
++        } else if (c === '"' || c === "'") quote = c;
++        else if (c === ">") break;
++        j++;
++      }
++      if (j >= n) throw new Error("bad xml");
++      let inner = xml.slice(lt + 1, j);
++      const selfClose = inner.endsWith("/");
++      if (selfClose) inner = inner.slice(0, -1);
++      const m = /^([^\s/>]+)([\s\S]*)$/.exec(inner);
++      if (!m) throw new Error("bad xml");
++      const el: El = { name: localName(m[1] ?? ""), attrs: new Map(), kids: [], text: "" };
++      const re = /([^\s=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
++      for (let a = re.exec(m[2] ?? ""); a; a = re.exec(m[2] ?? "")) {
++        el.attrs.set(localName(a[1] ?? ""), decodeEntities(a[2] ?? a[3] ?? ""));
++      }
++      top().kids.push(el);
++      if (!selfClose) stack.push(el);
++      i = j + 1;
++    }
++  }
++  if (stack.length !== 1) throw new Error("bad xml");
++  return root;
++};
++
++const child = (e: El, name: string): El | undefined => e.kids.find((k) => k.name === name);
++const children = (e: El, name: string): El[] => e.kids.filter((k) => k.name === name);
++
++// text of a string item: <t> and rich-text <r><t>, skipping phonetic runs
++const itemText = (e: El): string => {
++  let s = "";
++  for (const k of e.kids) {
++    if (k.name === "t") s += k.text;
++    else if (k.name === "r") s += itemText(k);
++  }
++  return s;
++};
++
++const decoder = new TextDecoder("utf-8");
++
++const normPath = (p: string): string => {
++  const parts: string[] = [];
++  for (const seg of p.split("/")) {
++    if (seg === "" || seg === ".") continue;
++    if (seg === "..") parts.pop();
++    else parts.push(seg);
++  }
++  return parts.join("/");
++};
++
++const BUILTIN_DATE_IDS = new Set([
++  14, 15, 16, 17, 18, 19, 20, 21, 22, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 45, 46, 47, 50, 51, 52, 53, 54, 55, 56, 57, 58,
++]);
++
++const isDateFormat = (code: string): boolean => {
++  const stripped = code
++    .replace(/"[^"]*"/g, "")
++    .replace(/\[[^\]]*\]/g, "")
++    .replace(/\\./g, "")
++    .replace(/_./g, "")
++    .replace(/\*./g, "");
++  return /[ymdhs]/i.test(stripped) && !/^general$/i.test(stripped.trim());
++};
++
++const colIndex = (ref: string): number => {
++  const m = /^([A-Za-z]+)/.exec(ref);
++  let n = 0;
++  for (const ch of (m?.[1] ?? "").toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64);
++  return n - 1;
++};
++
++const serialToDate = (serial: number, is1904: boolean): string | undefined => {
++  if (!Number.isFinite(serial) || serial < 0) return undefined;
++  let day = Math.floor(serial);
++  let ms: number;
++  if (is1904) ms = Date.UTC(1904, 0, 1) + day * 86400000;
++  else {
++    if (day === 60) return undefined;
++    if (day < 60) day += 1;
++    ms = Date.UTC(1899, 11, 30) + day * 86400000;
++  }
++  const d = new Date(ms);
++  if (Number.isNaN(d.getTime())) return undefined;
++  return d.toISOString().slice(0, 10);
++};
++
++export type Sheet = { rows: Map<number, Map<number, Val>> };
++
++export const readXlsx = (data: Uint8Array): Sheet => {
++  const files = unzipSync(data);
++  const getXml = (path: string): El | undefined => {
++    const want = normPath(path);
++    for (const [name, bytes] of Object.entries(files)) {
++      if (normPath(name) === want) return parseXml(decoder.decode(bytes));
++    }
++    return undefined;
++  };
++  const wb = getXml("xl/workbook.xml");
++  if (!wb) throw new Error("no workbook");
++  const wbEl = child(wb, "workbook");
++  if (!wbEl) throw new Error("no workbook");
++  const sheetEl = child(child(wbEl, "sheets") ?? wbEl, "sheet");
++  if (!sheetEl) throw new Error("no worksheet");
++  const rid = sheetEl.attrs.get("id");
++  let target: string | undefined;
++  const rels = getXml("xl/_rels/workbook.xml.rels");
++  const relRoot = rels ? child(rels, "Relationships") : undefined;
++  if (relRoot) {
++    const rel = children(relRoot, "Relationship").find((r) => r.attrs.get("Id") === rid);
++    const t = rel?.attrs.get("Target");
++    if (t !== undefined) target = t.startsWith("/") ? t : `xl/${t}`;
++  }
++  if (target === undefined) throw new Error("no worksheet");
++  const ws = getXml(target);
++  const wsEl = ws ? child(ws, "worksheet") : undefined;
++  if (!wsEl) throw new Error("no worksheet");
++  const is1904 = /^(1|true)$/i.test(child(wbEl, "workbookPr")?.attrs.get("date1904") ?? "");
++
++  const shared: string[] = [];
++  const sst = getXml("xl/sharedStrings.xml");
++  const sstEl = sst ? child(sst, "sst") : undefined;
++  if (sstEl) for (const si of children(sstEl, "si")) shared.push(itemText(si));
++
++  const dateStyle: boolean[] = [];
++  const st = getXml("xl/styles.xml");
++  const stEl = st ? child(st, "styleSheet") : undefined;
++  if (stEl) {
++    const custom = new Map<number, string>();
++    const nf = child(stEl, "numFmts");
++    if (nf) for (const f of children(nf, "numFmt")) custom.set(Number(f.attrs.get("numFmtId")), f.attrs.get("formatCode") ?? "");
++    const xfs = child(stEl, "cellXfs");
++    if (xfs) {
++      for (const xf of children(xfs, "xf")) {
++        const id = Number(xf.attrs.get("numFmtId") ?? "0");
++        const code = custom.get(id);
++        dateStyle.push(code !== undefined ? isDateFormat(code) : BUILTIN_DATE_IDS.has(id));
++      }
++    }
++  }
++
++  const rows = new Map<number, Map<number, Val>>();
++  const sd = child(wsEl, "sheetData");
++  let rowSeq = 0;
++  for (const row of sd ? children(sd, "row") : []) {
++    rowSeq++;
++    const rAttr = row.attrs.get("r");
++    const rn = rAttr !== undefined && /^\d+$/.test(rAttr) ? Number(rAttr) : rowSeq;
++    rowSeq = rn;
++    const cells = new Map<number, Val>();
++    let colSeq = -1;
++    for (const c of children(row, "c")) {
++      const ref = c.attrs.get("r");
++      const ci = ref !== undefined ? colIndex(ref) : colSeq + 1;
++      colSeq = ci;
++      const t = c.attrs.get("t") ?? "n";
++      const v = child(c, "v");
++      const vt = v ? v.text : "";
++      let val: Val = { t: "empty" };
++      if (t === "s") {
++        const idx = Number(vt.trim());
++        const s = vt.trim() === "" ? undefined : shared[idx];
++        val = s === undefined ? { t: "bad" } : { t: "str", s };
++      } else if (t === "inlineStr") {
++        const is = child(c, "is");
++        val = is ? { t: "str", s: itemText(is) } : { t: "empty" };
++      } else if (t === "str") {
++        val = v ? { t: "str", s: vt } : { t: "empty" };
++      } else if (t === "b" || t === "e") {
++        val = v ? { t: "bad" } : { t: "empty" };
++      } else if (t === "d") {
++        const m = /^(\d{4}-\d{2}-\d{2})/.exec(vt.trim());
++        val = m?.[1] !== undefined ? { t: "date", s: m[1] } : { t: "bad" };
++      } else if (vt.trim() !== "") {
++        const num = Number(vt.trim());
++        if (!Number.isFinite(num)) val = { t: "bad" };
++        else if (dateStyle[Number(c.attrs.get("s") ?? "0")] === true) {
++          const d = serialToDate(num, is1904);
++          val = d === undefined ? { t: "bad" } : { t: "date", s: d };
++        } else {
++          const s = decimalOf(num);
++          val = s === undefined ? { t: "bad" } : { t: "num", s };
++        }
++      }
++      if (val.t !== "empty" && !(val.t === "str" && val.s === "")) cells.set(ci, val);
++    }
++    if (cells.size > 0) rows.set(rn, cells);
++  }
++  return { rows };
++};
+diff --git a/yarn.lock b/yarn.lock
+index 650c184..39af746 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -413,6 +413,11 @@ fdir@^6.5.0:
+   resolved "https://registry.yarnpkg.com/fdir/-/fdir-6.5.0.tgz#ed2ab967a331ade62f18d077dae192684d50d350"
+   integrity sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==
+ 
++fflate@^0.8.3:
++  version "0.8.3"
++  resolved "https://registry.yarnpkg.com/fflate/-/fflate-0.8.3.tgz#bc27d8eb30343d4d512abb03480202ce65d825fc"
++  integrity sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==
++
+ "file-entry-cache@11.1.5 || >11.1.6 <12":
+   version "11.1.5"
+   resolved "https://registry.yarnpkg.com/file-entry-cache/-/file-entry-cache-11.1.5.tgz#c8210eb055de63e68685ccfb6a017e386d4577d0"
+@@ -682,6 +687,11 @@ word-wrap@^1.2.5:
+   resolved "https://registry.yarnpkg.com/word-wrap/-/word-wrap-1.2.5.tgz#d2c45c6dd4fbce621a66f136cbe328afd0410b34"
+   integrity sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==
+ 
++yaml@^2.9.1:
++  version "2.9.1"
++  resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.9.1.tgz#c16233fb31944e705cfefaff38795587f57588ce"
++  integrity sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==
++
+ yocto-queue@^0.1.0:
+   version "0.1.0"
+   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"

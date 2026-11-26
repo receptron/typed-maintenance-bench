@@ -1,0 +1,20 @@
+{
+  "build": {
+    "exitCode": 0,
+    "output": "",
+    "durationMs": 1071
+  },
+  "verify": {
+    "exitCode": 0,
+    "output": "",
+    "durationMs": 1745
+  },
+  "stages": [
+    {
+      "stage": 1,
+      "passed": 21,
+      "total": 21,
+      "failed": []
+    }
+  ]
+}

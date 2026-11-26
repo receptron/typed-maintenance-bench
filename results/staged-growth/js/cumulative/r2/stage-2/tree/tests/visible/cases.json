@@ -1,0 +1,79 @@
+{
+  "cases": [
+    {
+      "id": "s2-visible-json-day",
+      "description": "JSON array of string values",
+      "args": [
+        "--input",
+        "basic.json",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-visible-jsonl-day",
+      "description": "JSON Lines",
+      "args": [
+        "--input",
+        "basic.jsonl",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-visible-yaml-day",
+      "description": "YAML with unquoted dates and numbers",
+      "args": [
+        "--input",
+        "basic.yaml",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-visible-xlsx-day",
+      "description": "XLSX date cells and numeric cells",
+      "args": [
+        "--input",
+        "basic.xlsx",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s2-visible-csv-day",
+      "description": "CSV still works",
+      "args": [
+        "--input",
+        "basic.csv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    }
+  ]
+}

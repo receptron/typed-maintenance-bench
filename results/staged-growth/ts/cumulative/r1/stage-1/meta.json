@@ -1,0 +1,23 @@
+{
+  "experiment": "staged-growth",
+  "arm": "ts",
+  "mode": "cumulative",
+  "repeat": "r1",
+  "agent": "claude",
+  "model": "claude-sonnet-5-5",
+  "timeoutMs": 3600000,
+  "budgetUsd": 10,
+  "auth": "subscription",
+  "resultsDir": "/Users/isamu/ss/llm/typed-maintenance-bench/results",
+  "stage": 1,
+  "startedAt": "2026-11-26T07:47:44.547Z",
+  "endedAt": "2026-11-26T07:48:25.016Z",
+  "agentExitCode": 0,
+  "agentDurationMs": 40466,
+  "agentTimedOut": false,
+  "workTree": "/var/folders/7l/rvkkzlpd29j7xrptbsj68w5w0000gn/T/tmb-ts-cumulative-stage-1-I7bcqe",
+  "harnessCommit": "f39b5ad208c0b8a1a06982c6c61bd2a8e073590f",
+  "harnessDirty": true,
+  "node": "v26.12.1",
+  "agentVersion": "2.1.332 (Claude Code)"
+}

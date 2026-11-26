@@ -1,0 +1,42 @@
+{
+  "build": {
+    "exitCode": 0,
+    "output": "",
+    "durationMs": 1451
+  },
+  "verify": {
+    "exitCode": 0,
+    "output": "",
+    "durationMs": 3244
+  },
+  "stages": [
+    {
+      "stage": 1,
+      "passed": 21,
+      "total": 21,
+      "failed": []
+    },
+    {
+      "stage": 2,
+      "passed": 31,
+      "total": 33,
+      "failed": [
+        {
+          "id": "s2-invalid-json",
+          "failures": [
+            "stdout differs\n--- expected\nsku\trevenue\nA\t2.00\nB\t2.70\nD\t100.00\nE\t0.10\nTOTAL\t104.80\n--- actual\nsku\trevenue\nA\t2.00\nB\t2.70\nD\t100.00\nE\t0.10\nX\t2.00\nTOTAL\t106.80\n",
+            "expected 12 stderr lines, got 11",
+            "no stderr line starts with \"invalid.json:#14:\""
+          ]
+        },
+        {
+          "id": "s2-fatal-yaml-syntax",
+          "failures": [
+            "exit code 0, expected 2",
+            "stdout differs\n--- expected\n--- actual\nday\trevenue\nTOTAL\t0.00\n"
+          ]
+        }
+      ]
+    }
+  ]
+}

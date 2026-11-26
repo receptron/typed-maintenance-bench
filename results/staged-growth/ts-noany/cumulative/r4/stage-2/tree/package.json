@@ -1,0 +1,20 @@
+{
+  "name": "orders",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "verify": "tsc --noEmit && eslint src"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.11",
+    "eslint": "10.15.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.74.0"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3",
+    "yaml": "^2.9.1"
+  }
+}

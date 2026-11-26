@@ -1,0 +1,49 @@
+{
+  "cases": [
+    {
+      "id": "s1-visible-basic-day",
+      "description": "Revenue by day; discounts; keys sorted",
+      "args": [
+        "--input",
+        "basic.csv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-01-04\t1.98\n2026-01-05\t5.85\n2026-01-06\t10.20\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s1-visible-basic-sku",
+      "description": "Revenue by sku",
+      "args": [
+        "--input",
+        "basic.csv",
+        "--group-by",
+        "sku"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "sku\trevenue\nAPPLE\t13.80\nKIWI\t1.98\nPEAR\t2.25\nTOTAL\t18.03\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s1-visible-header-only",
+      "description": "No records",
+      "args": [
+        "--input",
+        "header-only.csv",
+        "--group-by",
+        "day"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\nTOTAL\t0.00\n",
+        "stderrPrefixes": []
+      }
+    }
+  ]
+}

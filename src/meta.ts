@@ -15,8 +15,11 @@ export type Provenance = {
   agentVersion: string | null;
 };
 
+// results/ is excluded because the run being recorded has just written its own output there.
+const HARNESS_STATUS = ["git", "status", "--porcelain", "--", ".", ":(exclude)results"];
+
 export const collectProvenance = async (agentVersionCommand: string[] | null): Promise<Provenance> => {
-  const status = await execute(["git", "status", "--porcelain"], { cwd: REPO_ROOT, timeoutMs: META_TIMEOUT_MS });
+  const status = await execute(HARNESS_STATUS, { cwd: REPO_ROOT, timeoutMs: META_TIMEOUT_MS });
   return {
     harnessCommit: await firstLine(["git", "rev-parse", "HEAD"]),
     harnessDirty: status.output.trim() !== "",

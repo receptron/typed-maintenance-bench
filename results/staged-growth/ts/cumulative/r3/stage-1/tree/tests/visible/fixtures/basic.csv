@@ -1,0 +1,5 @@
+order_id,customer_id,order_date,sku,quantity,unit_price,discount,notes
+1001,C01,2026-01-05,APPLE,3,1.20,,
+1001,C01,2026-01-05,PEAR,1,2.50,0.10,gift
+1002,C02,2026-01-06,APPLE,10,1.20,0.15,
+1003,C01,2026-01-04,KIWI,2,0.99,,

@@ -1,0 +1,430 @@
+diff --git a/package.json b/package.json
+index b408e8f..02570e0 100644
+--- a/package.json
++++ b/package.json
+@@ -2,5 +2,9 @@
+   "name": "orders",
+   "version": "0.0.0",
+   "private": true,
+-  "type": "module"
++  "type": "module",
++  "dependencies": {
++    "fflate": "^0.8.3",
++    "yaml": "^2.9.1"
++  }
+ }
+diff --git a/src/cli.js b/src/cli.js
+index 829ab58..6c27710 100644
+--- a/src/cli.js
++++ b/src/cli.js
+@@ -1,4 +1,5 @@
+ import { readFileSync } from "node:fs";
++import { BAD, readTyped, toText } from "./formats.js";
+ 
+ const fatal = (msg) => {
+   process.stderr.write(`error: ${msg}\n`);
+@@ -9,14 +10,23 @@ const parseArgs = (argv) => {
+   const opts = {};
+   for (let i = 0; i < argv.length; i += 2) {
+     const k = argv[i];
+-    if (k !== "--input" && k !== "--group-by") fatal(`unknown option: ${k}`);
++    if (k !== "--input" && k !== "--group-by" && k !== "--format") fatal(`unknown option: ${k}`);
+     if (i + 1 >= argv.length) fatal(`missing value for ${k}`);
+     if (k in opts) fatal(`duplicate option: ${k}`);
+     opts[k] = argv[i + 1];
+   }
+   if (opts["--input"] === undefined || opts["--input"] === "") fatal("missing --input");
+   if (!["day", "sku", "customer"].includes(opts["--group-by"])) fatal("missing or invalid --group-by");
+-  return { input: opts["--input"], groupBy: opts["--group-by"] };
++  const FORMATS = ["csv", "json", "jsonl", "yaml", "xlsx"];
++  let format = opts["--format"];
++  if (format === undefined) {
++    const name = opts["--input"].toLowerCase();
++    const byExt = [[".csv", "csv"], [".json", "json"], [".jsonl", "jsonl"], [".ndjson", "jsonl"], [".yaml", "yaml"], [".yml", "yaml"], [".xlsx", "xlsx"]];
++    const hit = byExt.find(([e]) => name.endsWith(e));
++    if (!hit) fatal("cannot determine format from extension; use --format");
++    format = hit[1];
++  } else if (!FORMATS.includes(format)) fatal(`unknown format: ${format}`);
++  return { input: opts["--input"], groupBy: opts["--group-by"], format };
+ };
+ 
+ // Returns records: { line, fields }. Completely empty lines are skipped.
+@@ -87,48 +97,78 @@ const cmp = (a, b) => {
+ 
+ const fmt = (c) => `${c / 100n}.${String(c % 100n).padStart(2, "0")}`;
+ 
+-const main = () => {
+-  const { input, groupBy } = parseArgs(process.argv.slice(2));
+-  let text;
+-  try { text = readFileSync(input).toString("utf8"); } catch (e) { fatal(`cannot read ${input}: ${e.message}`); }
+-  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+-  const records = parseCsv(text);
+-  if (records.length === 0) fatal("no header line");
+-  const header = records.shift().fields;
+-  const required = ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price"];
+-  const idx = {};
+-  for (const name of [...required, "discount"]) {
+-    const p = header.indexOf(name);
+-    if (p >= 0) idx[name] = p;
++const REQUIRED = ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price"];
++
++// Returns { records: [{ loc, invalid?, get(name) }] } where get returns a string or BAD.
++const load = (input, format) => {
++  let buf;
++  try { buf = readFileSync(input); } catch (e) { fatal(`cannot read ${input}: ${e.message}`); }
++  if (format === "csv") {
++    let text;
++    try { text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(buf); } catch { fatal("input is not valid UTF-8"); }
++    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
++    const records = parseCsv(text);
++    if (records.length === 0) fatal("no header line");
++    const header = records.shift().fields;
++    const idx = {};
++    for (const name of [...REQUIRED, "discount"]) {
++      const p = header.indexOf(name);
++      if (p >= 0) idx[name] = p;
++    }
++    for (const r of REQUIRED) if (!(r in idx)) fatal(`header missing column: ${r}`);
++    return records.map(({ line, fields }) => ({
++      loc: String(line),
++      short: fields.length < header.length,
++      get: (name) => (name in idx ? fields[idx[name]] : ""),
++    }));
+   }
+-  for (const r of required) if (!(r in idx)) fatal(`header missing column: ${r}`);
++  let res;
++  try { res = readTyped(format, buf); } catch (e) { fatal(`cannot parse ${format}: ${e.message}`); }
++  if (res.header) for (const r of REQUIRED) if (!res.header.has(r)) fatal(`header missing column: ${r}`);
++  return res.records.map((r) => ({
++    loc: r.loc,
++    invalid: r.invalid,
++    get: r.get && ((name) => toText(r.get(name), name === "order_date")),
++  }));
++};
+ 
++const main = () => {
++  const { input, groupBy, format } = parseArgs(process.argv.slice(2));
++  const records = load(input, format);
+   const seen = new Set();
+   const sums = new Map();
+   let total = 0n;
+   const out = [];
+-  for (const { line, fields } of records) {
+-    const bad = (reason) => process.stderr.write(`${input}:${line}: ${reason}\n`);
+-    if (fields.length < header.length) { bad("too few fields"); continue; }
+-    const g = (name) => fields[idx[name]];
++  for (const rec of records) {
++    const bad = (reason) => process.stderr.write(`${input}:${rec.loc}: ${reason}\n`);
++    if (rec.short) { bad("too few fields"); continue; }
++    if (rec.invalid) { bad("invalid record"); continue; }
++    let badField = null;
++    const g = (name) => {
++      const v = rec.get(name);
++      if (v === BAD && badField === null) badField = name;
++      return v === BAD ? "" : v;
++    };
+     const orderId = g("order_id"), cust = g("customer_id"), date = g("order_date"), sku = g("sku");
++    const qty = g("quantity"), priceS = g("unit_price"), discS = g("discount");
++    if (badField !== null) { bad(`invalid ${badField}`); continue; }
+     if (orderId === "") { bad("empty order_id"); continue; }
+     if (cust === "") { bad("empty customer_id"); continue; }
+     if (!isRealDate(date)) { bad("invalid order_date"); continue; }
+     if (sku === "") { bad("empty sku"); continue; }
+-    if (!/^[0-9]+$/.test(g("quantity")) || BigInt(g("quantity")) < 1n) { bad("invalid quantity"); continue; }
+-    const price = toCents(g("unit_price"));
++    if (!/^[0-9]+$/.test(qty) || BigInt(qty) < 1n) { bad("invalid quantity"); continue; }
++    const price = toCents(priceS);
+     if (price === null) { bad("invalid unit_price"); continue; }
+     let disc = 0n;
+-    if ("discount" in idx && g("discount") !== "") {
+-      const d = toCents(g("discount"));
++    if (discS !== "") {
++      const d = toCents(discS);
+       if (d === null || d > 100n) { bad("invalid discount"); continue; }
+       disc = d;
+     }
+     const key = JSON.stringify([orderId, sku]);
+     if (seen.has(key)) { bad("duplicate (order_id, sku)"); continue; }
+     seen.add(key);
+-    const rev = (price * BigInt(g("quantity")) * (100n - disc) + 50n) / 100n;
++    const rev = (price * BigInt(qty) * (100n - disc) + 50n) / 100n;
+     const k = groupBy === "day" ? date : groupBy === "sku" ? sku : cust;
+     sums.set(k, (sums.get(k) ?? 0n) + rev);
+     total += rev;
+diff --git a/src/formats.js b/src/formats.js
+new file mode 100644
+index 0000000..acf011f
+--- /dev/null
++++ b/src/formats.js
+@@ -0,0 +1,83 @@
++import { parseDocument } from "yaml";
++import { readXlsx, XlsxError } from "./xlsx.js";
++
++export const BAD = Symbol("bad");
++
++const trim = (s) => s.replace(/^[ \t]+|[ \t]+$/g, "");
++
++// Shortest decimal form of a finite number, without exponent.
++const numStr = (n) => {
++  if (!Number.isFinite(n)) return BAD;
++  let s = String(n);
++  if (!/e/i.test(s)) return s === "-0" ? "0" : s;
++  const m = /^(-?)(\d+)(?:\.(\d+))?e([+-]\d+)$/.exec(s);
++  if (!m) return BAD;
++  const digits = m[2] + (m[3] ?? "");
++  const pos = m[2].length + Number(m[4]);
++  let r;
++  if (pos <= 0) r = "0." + "0".repeat(-pos) + digits;
++  else if (pos >= digits.length) r = digits + "0".repeat(pos - digits.length);
++  else r = digits.slice(0, pos) + "." + digits.slice(pos);
++  return m[1] + r;
++};
++
++// Convert a typed value into a string (or BAD).
++export const toText = (v, isDate = false) => {
++  if (v === null || v === undefined) return "";
++  if (typeof v === "string") return trim(v);
++  if (typeof v === "number") return numStr(v);
++  if (typeof v === "object" && typeof v.date === "string") return isDate ? v.date : BAD;
++  return BAD;
++};
++
++const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
++const objGetter = (o) => (name) => (Object.hasOwn(o, name) ? o[name] : null);
++
++const utf8 = (buf) => {
++  let t = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(buf);
++  if (t.charCodeAt(0) === 0xfeff) t = t.slice(1);
++  return t;
++};
++
++// Each reader returns { records: [{ loc, get(name) | invalid: true }], header?: string[] }
++export const readTyped = (format, buf) => {
++  if (format === "json") {
++    const v = JSON.parse(utf8(buf));
++    if (!Array.isArray(v)) throw new Error("top-level value is not an array");
++    return { records: v.map((e, i) => ({ loc: `#${i + 1}`, ...(isObj(e) ? { get: objGetter(e) } : { invalid: true }) })) };
++  }
++  if (format === "jsonl") {
++    const records = [];
++    utf8(buf).split("\n").forEach((ln, i) => {
++      if (trim(ln.replace(/\r/g, "")) === "") return;
++      let v;
++      try { v = JSON.parse(ln); } catch { v = undefined; }
++      records.push({ loc: String(i + 1), ...(isObj(v) ? { get: objGetter(v) } : { invalid: true }) });
++    });
++    return { records };
++  }
++  if (format === "yaml") {
++    const doc = parseDocument(utf8(buf), { uniqueKeys: false });
++    if (doc.errors.length) throw new Error(doc.errors[0].message);
++    const v = doc.toJS({ maxAliasCount: -1 });
++    if (!Array.isArray(v)) throw new Error("top-level value is not a sequence");
++    return { records: v.map((e, i) => ({ loc: `#${i + 1}`, ...(isObj(e) && !(e instanceof Map) ? { get: objGetter(e) } : { invalid: true }) })) };
++  }
++  // xlsx
++  let rows;
++  try { rows = readXlsx(buf); } catch (e) {
++    if (e instanceof XlsxError) throw e;
++    throw new XlsxError(`cannot open workbook: ${e.message}`);
++  }
++  if (rows.length === 0 || rows[0].line !== 1) throw new XlsxError("no header row");
++  const header = new Map();
++  for (const [ci, v] of rows[0].cells) {
++    const t = toText(v);
++    if (t !== BAD && t !== "" && !header.has(t)) header.set(t, ci);
++  }
++  const records = rows.slice(1).map((r) => ({
++    loc: String(r.line),
++    get: (name) => (header.has(name) ? r.cells.get(header.get(name)) ?? null : null),
++  }));
++  return { records, header };
++};
+diff --git a/src/xlsx.js b/src/xlsx.js
+new file mode 100644
+index 0000000..2832f63
+--- /dev/null
++++ b/src/xlsx.js
+@@ -0,0 +1,165 @@
++import { unzipSync, strFromU8 } from "fflate";
++
++export class XlsxError extends Error {}
++
++const stripNs = (xml) => xml.replace(/<(\/?)[\w.-]+:(?=[\w.-])/g, "<$1");
++
++const decodeXml = (s) =>
++  s
++    .replace(/&(#x[0-9a-fA-F]+|#[0-9]+|amp|lt|gt|quot|apos);/g, (m, e) => {
++      if (e === "amp") return "&";
++      if (e === "lt") return "<";
++      if (e === "gt") return ">";
++      if (e === "quot") return '"';
++      if (e === "apos") return "'";
++      const cp = e[1] === "x" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
++      try { return String.fromCodePoint(cp); } catch { return ""; }
++    })
++    .replace(/_x([0-9a-fA-F]{4})_/g, (m, h) => String.fromCharCode(parseInt(h, 16)));
++
++const attrs = (s) => {
++  const o = {};
++  for (const m of s.matchAll(/([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) o[m[1]] = decodeXml(m[2] ?? m[3]);
++  return o;
++};
++
++const textOf = (xml) => {
++  const cleaned = xml.replace(/<rPh\b[\s\S]*?<\/rPh>/g, "");
++  let out = "";
++  for (const m of cleaned.matchAll(/<t\b[^>]*?(?:\/>|>([\s\S]*?)<\/t>)/g)) out += decodeXml(m[1] ?? "");
++  return out;
++};
++
++const prep = (u8) => stripNs(strFromU8(u8).replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, (m, t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")));
++
++const colIndex = (ref) => {
++  const m = /^([A-Za-z]+)/.exec(ref ?? "");
++  if (!m) return -1;
++  let n = 0;
++  for (const ch of m[1].toUpperCase()) n = n * 26 + ch.charCodeAt(0) - 64;
++  return n - 1;
++};
++
++const BUILTIN_DATE = (id) => (id >= 14 && id <= 22) || (id >= 27 && id <= 36) || (id >= 45 && id <= 47) || (id >= 50 && id <= 58);
++
++const customIsDate = (code) => {
++  const c = code.split(";")[0].replace(/"[^"]*"/g, "").replace(/\[[^\]]*\]/g, "").replace(/\\./g, "").replace(/_./g, "");
++  return /[ymdhs]/i.test(c);
++};
++
++const serialToDate = (serial, is1904) => {
++  const days = Math.floor(serial);
++  let ms;
++  if (is1904) {
++    if (days < 0) return null;
++    ms = Date.UTC(1904, 0, 1) + days * 86400000;
++  } else {
++    if (days < 1 || days === 60) return null;
++    ms = Date.UTC(1899, 11, days < 60 ? 31 : 30) + days * 86400000;
++  }
++  const d = new Date(ms);
++  const y = d.getUTCFullYear();
++  if (y < 0 || y > 9999) return null;
++  return `${String(y).padStart(4, "0")}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
++};
++
++// Returns { header: (string|null)[], rows: [{ line, cells: Map<colIdx, value> }] }
++// value: null | string | number | { date: string } | { bad: true }
++export const readXlsx = (buf) => {
++  let files;
++  try { files = unzipSync(new Uint8Array(buf)); } catch (e) { throw new XlsxError(`cannot open workbook: ${e.message}`); }
++  const get = (name) => {
++    const k = Object.keys(files).find((f) => f.replace(/^\//, "") === name);
++    return k === undefined ? null : files[k];
++  };
++  const wbRaw = get("xl/workbook.xml");
++  if (!wbRaw) throw new XlsxError("cannot open workbook: no workbook.xml");
++  const wb = prep(wbRaw);
++  const sm = /<sheet\b[^>]*?\/?>/.exec(wb);
++  if (!sm) throw new XlsxError("workbook has no worksheet");
++  const rid = attrs(sm[0])["id"] ?? attrs(sm[0])["r:id"];
++  const is1904 = /<workbookPr\b[^>]*\bdate1904\s*=\s*["'](1|true)["']/i.test(wb);
++  let target;
++  const relsRaw = get("xl/_rels/workbook.xml.rels");
++  if (relsRaw && rid !== undefined) {
++    for (const m of prep(relsRaw).matchAll(/<Relationship\b[^>]*?\/?>/g)) {
++      const a = attrs(m[0]);
++      if (a.Id === rid) target = a.Target;
++    }
++  }
++  if (target === undefined) throw new XlsxError("cannot locate first worksheet");
++  const path = target.startsWith("/") ? target.slice(1) : "xl/" + target;
++  const norm = [];
++  for (const p of path.split("/")) { if (p === "..") norm.pop(); else if (p !== ".") norm.push(p); }
++  const sheetRaw = get(norm.join("/"));
++  if (!sheetRaw) throw new XlsxError("first worksheet missing");
++
++  const shared = [];
++  const ssRaw = get("xl/sharedStrings.xml");
++  if (ssRaw) {
++    for (const m of prep(ssRaw).matchAll(/<si\b[^>]*?(?:\/>|>([\s\S]*?)<\/si>)/g)) shared.push(textOf(m[1] ?? ""));
++  }
++
++  const xfDate = [];
++  const stRaw = get("xl/styles.xml");
++  if (stRaw) {
++    const st = prep(stRaw);
++    const custom = new Map();
++    for (const m of st.matchAll(/<numFmt\b[^>]*?\/?>/g)) {
++      const a = attrs(m[0]);
++      custom.set(Number(a.numFmtId), a.formatCode ?? "");
++    }
++    const blk = /<cellXfs\b[^>]*?>([\s\S]*?)<\/cellXfs>/.exec(st);
++    if (blk) {
++      for (const m of blk[1].matchAll(/<xf\b[^>]*?\/?>/g)) {
++        const id = Number(attrs(m[0]).numFmtId ?? 0);
++        xfDate.push(custom.has(id) ? customIsDate(custom.get(id)) : BUILTIN_DATE(id));
++      }
++    }
++  }
++
++  const sheet = prep(sheetRaw);
++  const rows = [];
++  let autoRow = 0;
++  for (const rm of sheet.matchAll(/<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/g)) {
++    const ra = attrs(rm[1]);
++    autoRow = ra.r !== undefined && /^[0-9]+$/.test(ra.r) ? Number(ra.r) : autoRow + 1;
++    const cells = new Map();
++    let auto = -1;
++    for (const cm of (rm[2] ?? "").matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
++      const ca = attrs(cm[1]);
++      const ci = ca.r !== undefined && colIndex(ca.r) >= 0 ? colIndex(ca.r) : auto + 1;
++      auto = ci;
++      const inner = cm[2] ?? "";
++      const t = ca.t ?? "n";
++      let val = null;
++      const vm = /<v\b[^>]*?(?:\/>|>([\s\S]*?)<\/v>)/.exec(inner);
++      const vtext = vm && vm[1] !== undefined ? decodeXml(vm[1]) : null;
++      if (t === "inlineStr") {
++        const im = /<is\b[^>]*?(?:\/>|>([\s\S]*?)<\/is>)/.exec(inner);
++        val = im ? textOf(im[1] ?? "") : null;
++      } else if (vtext === null) val = null;
++      else if (t === "s") {
++        const s = shared[Number(vtext.trim())];
++        val = s === undefined ? { bad: true } : s;
++      } else if (t === "str") val = vtext;
++      else if (t === "b" || t === "e") val = { bad: true };
++      else if (t === "d") val = /^\d{4}-\d{2}-\d{2}(?:$|[T ])/.test(vtext.trim()) ? { date: vtext.trim().slice(0, 10) } : vtext;
++      else {
++        if (vtext.trim() === "") val = null;
++        else {
++          const n = Number(vtext.trim());
++          if (!Number.isFinite(n)) val = { bad: true };
++          else if (xfDate[Number(ca.s ?? 0)]) {
++            const d = serialToDate(n, is1904);
++            val = d === null ? { bad: true } : { date: d };
++          } else val = n;
++        }
++      }
++      if (val !== null) cells.set(ci, val);
++    }
++    const hasValue = [...cells.values()].some((v) => v !== "");
++    if (hasValue) rows.push({ line: autoRow, cells });
++  }
++  return rows;
++};
+diff --git a/yarn.lock b/yarn.lock
+index fb57ccd..26c09ad 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -2,3 +2,12 @@
+ # yarn lockfile v1
+ 
+ 
++fflate@^0.8.3:
++  version "0.8.3"
++  resolved "https://registry.yarnpkg.com/fflate/-/fflate-0.8.3.tgz#bc27d8eb30343d4d512abb03480202ce65d825fc"
++  integrity sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==
++
++yaml@^2.9.1:
++  version "2.9.1"
++  resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.9.1.tgz#c16233fb31944e705cfefaff38795587f57588ce"
++  integrity sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==

@@ -43,7 +43,7 @@ In `json`, `jsonl`, `yaml` and `xlsx`, a field may hold a string or a number. A 
 - A **number** is read as its shortest decimal form: `19.99` is `19.99` and `3` is `3`. It must then meet the column's rule. For example, the number `2.5` as a quantity is invalid, and the number `19.999` as a unit price is invalid.
 - A number in a text column (`order_id`, `customer_id`, `sku`) stands for its decimal form: the number `1001` is the id `1001`.
 - An **`order_date`** may also be a YAML date (`2026-01-05` without quotes) or an XLSX date cell. Either one stands for that calendar date.
-- Booleans, objects and arrays are invalid in every field.
+- Booleans, objects and arrays are invalid in every field, `notes` included: in these formats `notes` may be a string, a number or empty.
 
 An element of a `json` array or `yaml` sequence that is not an object or mapping is an invalid record. So is a `jsonl` line that is not a valid JSON object.
 

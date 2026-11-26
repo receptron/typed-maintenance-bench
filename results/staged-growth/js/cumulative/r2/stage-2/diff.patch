@@ -1,0 +1,405 @@
+diff --git a/package.json b/package.json
+index b408e8f..85d22b2 100644
+--- a/package.json
++++ b/package.json
+@@ -2,5 +2,10 @@
+   "name": "orders",
+   "version": "0.0.0",
+   "private": true,
+-  "type": "module"
++  "type": "module",
++  "dependencies": {
++    "fast-xml-parser": "^5.12.1",
++    "fflate": "^0.8.3",
++    "yaml": "^2.9.1"
++  }
+ }
+diff --git a/src/cli.js b/src/cli.js
+index e7e2862..a338f1c 100644
+--- a/src/cli.js
++++ b/src/cli.js
+@@ -1,4 +1,7 @@
+ import { readFileSync } from "node:fs";
++import { parseDocument } from "yaml";
++import { unzipSync } from "fflate";
++import { XMLParser } from "fast-xml-parser";
+ 
+ const fatal = (msg) => {
+   process.stderr.write(`error: ${msg}\n`);
+@@ -9,14 +12,23 @@ const parseArgs = (argv) => {
+   const opts = {};
+   for (let i = 0; i < argv.length; i += 2) {
+     const name = argv[i];
+-    if (name !== "--input" && name !== "--group-by") fatal(`unknown option: ${name}`);
++    if (name !== "--input" && name !== "--group-by" && name !== "--format") fatal(`unknown option: ${name}`);
+     if (i + 1 >= argv.length) fatal(`missing value for ${name}`);
+     opts[name] = argv[i + 1];
+   }
+   if (opts["--input"] === undefined) fatal("missing --input");
+   if (opts["--group-by"] === undefined) fatal("missing --group-by");
+   if (!["day", "sku", "customer"].includes(opts["--group-by"])) fatal(`invalid --group-by: ${opts["--group-by"]}`);
+-  return { input: opts["--input"], groupBy: opts["--group-by"] };
++  const formats = ["csv", "json", "jsonl", "yaml", "xlsx"];
++  let format = opts["--format"];
++  if (format === undefined) {
++    const base = opts["--input"].split(/[\\/]/).pop();
++    const dot = base.lastIndexOf(".");
++    const ext = dot < 0 ? "" : base.slice(dot + 1).toLowerCase();
++    format = { csv: "csv", json: "json", jsonl: "jsonl", ndjson: "jsonl", yaml: "yaml", yml: "yaml", xlsx: "xlsx" }[ext];
++    if (format === undefined) fatal(`cannot determine format of ${opts["--input"]}; use --format`);
++  } else if (!formats.includes(format)) fatal(`invalid --format: ${format}`);
++  return { input: opts["--input"], groupBy: opts["--group-by"], format };
+ };
+ 
+ // RFC 4180 parser; yields { line, fields, blank }
+@@ -81,32 +93,258 @@ const cmp = (a, b) => {
+   return x.length - y.length;
+ };
+ 
+-const main = () => {
+-  const { input, groupBy } = parseArgs(process.argv.slice(2));
+-  let text;
++
++const FIELDS = ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price", "discount", "notes"];
++const REQUIRED = ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price"];
++const trimST = (s) => s.replace(/^[ \t]+|[ \t]+$/g, "");
++
++// shortest decimal form of a finite number, never in exponent notation
++const numToDecimal = (n) => {
++  if (!Number.isFinite(n)) return null;
++  if (Object.is(n, -0)) return "0";
++  let s = String(n);
++  const m = /^(-?)(\d+)(?:\.(\d+))?e([+-]\d+)$/.exec(s);
++  if (!m) return s;
++  const [, sign, ip, fp = "", ex] = m;
++  const digits = ip + fp;
++  const pos = ip.length + Number(ex);
++  if (pos <= 0) s = "0." + "0".repeat(-pos) + digits;
++  else if (pos >= digits.length) s = digits + "0".repeat(pos - digits.length);
++  else s = digits.slice(0, pos) + "." + digits.slice(pos);
++  return sign + s;
++};
++
++class DateValue {
++  constructor(text) { this.text = text; }
++}
++
++// Convert a typed value to the string the CSV rules operate on; null = invalid type.
++const typedToString = (v, field) => {
++  if (v === undefined || v === null) return "";
++  if (typeof v === "string") return trimST(v);
++  if (typeof v === "number") return numToDecimal(v);
++  if (v instanceof DateValue) return field === "order_date" ? v.text : (v.alt ?? v.text);
++  return null;
++};
++
++const typedRecord = (loc, obj) => {
++  if (obj === null || typeof obj !== "object" || Array.isArray(obj)) return { loc, pre: "invalid record" };
++  const vals = {};
++  for (const f of FIELDS) {
++    const raw = Object.prototype.hasOwnProperty.call(obj, f) ? obj[f] : undefined;
++    const s = typedToString(raw, f);
++    if (s === null) return { loc, pre: `invalid ${f}` };
++    vals[f] = s;
++  }
++  return { loc, get: (name) => vals[name] };
++};
++
++const decodeUtf8 = (buf) => {
+   try {
+-    text = readFileSync(input).toString("utf8");
+-  } catch (e) {
+-    fatal(`cannot read ${input}: ${e.message}`);
++    return new TextDecoder("utf-8", { fatal: true }).decode(buf);
++  } catch {
++    fatal("input is not valid UTF-8");
+   }
+-  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
++};
++
++const readCsv = (buf) => {
++  const text = decodeUtf8(buf);
+   const records = parseCsv(text);
+   if (records.length === 0) fatal("no header line");
+   const header = records[0].fields;
+-  const required = ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price"];
+   const idx = {};
+   header.forEach((h, k) => { if (!(h in idx)) idx[h] = k; });
+-  for (const r of required) if (!(r in idx)) fatal(`header missing column: ${r}`);
++  for (const r of REQUIRED) if (!(r in idx)) fatal(`header missing column: ${r}`);
++  return records.slice(1).filter((r) => !r.blank).map((rec) => {
++    if (rec.fields.length < header.length) return { loc: rec.line, pre: "too few fields" };
++    return { loc: rec.line, get: (name) => (name in idx ? rec.fields[idx[name]] : undefined) };
++  });
++};
++
++const readJson = (buf) => {
++  let data;
++  try { data = JSON.parse(decodeUtf8(buf)); } catch { fatal("invalid JSON"); }
++  if (!Array.isArray(data)) fatal("JSON top-level value is not an array");
++  return data.map((o, i) => typedRecord(`#${i + 1}`, o));
++};
++
++const readJsonl = (buf) => {
++  const out = [];
++  decodeUtf8(buf).split("\n").forEach((line, i) => {
++    if (line.trim() === "") return;
++    let o;
++    try { o = JSON.parse(line); } catch { out.push({ loc: i + 1, pre: "invalid JSON" }); return; }
++    out.push(typedRecord(i + 1, o));
++  });
++  return out;
++};
++
++const readYaml = (buf) => {
++  let data;
++  try {
++    const doc = parseDocument(decodeUtf8(buf), { schema: "core", version: "1.2" });
++    if (doc.errors.length) throw new Error("bad yaml");
++    data = doc.toJS();
++  } catch { fatal("invalid YAML"); }
++  if (!Array.isArray(data)) fatal("YAML top-level value is not a sequence");
++  return data.map((o, i) => typedRecord(`#${i + 1}`, o));
++};
++
++// ---- xlsx ----
++const arr = (x) => (x === undefined ? [] : Array.isArray(x) ? x : [x]);
++const decodeXlsxText = (s) => s.replace(/_x([0-9A-Fa-f]{4})_/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
++const textOf = (t) => (typeof t === "string" ? t : t && typeof t === "object" ? String(t["#text"] ?? "") : "");
++const richText = (si) => {
++  if (si === undefined || si === null || typeof si !== "object") return "";
++  let s = textOf(si.t);
++  for (const r of arr(si.r)) s += textOf(r.t);
++  return decodeXlsxText(s);
++};
++
++const colIndex = (ref) => {
++  const m = /^([A-Za-z]+)/.exec(ref ?? "");
++  if (!m) return null;
++  let n = 0;
++  for (const ch of m[1].toUpperCase()) n = n * 26 + ch.charCodeAt(0) - 64;
++  return n - 1;
++};
++
++const isDateFormat = (id, code) => {
++  if (code === undefined) return (id >= 14 && id <= 17) || id === 22 || (id >= 27 && id <= 31) || (id >= 34 && id <= 36) || (id >= 50 && id <= 58);
++  const c = code.replace(/"[^"]*"/g, "").replace(/\\./g, "").replace(/\[[^\]]*\]/g, "").replace(/_./g, "");
++  return /[ydYD]/.test(c);
++};
++
++const serialToDate = (n, epoch1904) => {
++  if (!Number.isFinite(n) || n < 0) return null;
++  const days = Math.floor(n);
++  let ms;
++  if (epoch1904) ms = Date.UTC(1904, 0, 1) + days * 86400000;
++  else if (days === 60) return null;
++  else ms = days < 60 ? Date.UTC(1899, 11, 31) + days * 86400000 : Date.UTC(1899, 11, 30) + days * 86400000;
++  const d = new Date(ms);
++  const y = d.getUTCFullYear();
++  if (y < 0 || y > 9999) return null;
++  return `${String(y).padStart(4, "0")}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
++};
++
++const readXlsx = (buf) => {
++  let files;
++  const xp = new XMLParser({
++    ignoreAttributes: false, attributeNamePrefix: "@_", parseTagValue: false, parseAttributeValue: false,
++    trimValues: false, processEntities: true, htmlEntities: true,
++  });
++  let wbDoc, sheetDoc, sst = [], xfs = [], numFmts = {}, epoch1904 = false;
++  try {
++    files = unzipSync(new Uint8Array(buf));
++    const get = (p) => {
++      const f = files[p.replace(/^\//, "")];
++      return f === undefined ? undefined : xp.parse(Buffer.from(f).toString("utf8"));
++    };
++    wbDoc = get("xl/workbook.xml");
++    const rels = get("xl/_rels/workbook.xml.rels");
++    const first = arr(wbDoc.workbook.sheets.sheet)[0];
++    const rid = first["@_r:id"];
++    const rel = arr(rels.Relationships.Relationship).find((r) => r["@_Id"] === rid);
++    let target = rel["@_Target"];
++    target = target.startsWith("/") ? target.slice(1) : "xl/" + target;
++    const parts = [];
++    for (const p of target.split("/")) { if (p === "..") parts.pop(); else if (p !== ".") parts.push(p); }
++    sheetDoc = get(parts.join("/"));
++    if (!sheetDoc || !sheetDoc.worksheet) throw new Error("no sheet");
++    epoch1904 = ["1", "true"].includes(String(wbDoc.workbook.workbookPr?.["@_date1904"]));
++    const sd = get("xl/sharedStrings.xml");
++    if (sd?.sst) sst = arr(sd.sst.si).map(richText);
++    const st = get("xl/styles.xml");
++    if (st?.styleSheet) {
++      for (const nf of arr(st.styleSheet.numFmts?.numFmt)) numFmts[nf["@_numFmtId"]] = nf["@_formatCode"];
++      xfs = arr(st.styleSheet.cellXfs?.xf).map((x) => {
++        const id = Number(x["@_numFmtId"] ?? 0);
++        return isDateFormat(id, numFmts[id]);
++      });
++    }
++  } catch { fatal("cannot open xlsx workbook"); }
++
++  // rows: Map rowNumber -> Map col -> value (string | number | DateValue | {bad})
++  const BAD = Symbol("bad");
++  const rows = [];
++  let prevRow = 0;
++  for (const row of arr(sheetDoc.worksheet.sheetData?.row)) {
++    const rn = row["@_r"] !== undefined ? Number(row["@_r"]) : prevRow + 1;
++    prevRow = rn;
++    const cells = new Map();
++    let prevCol = -1;
++    for (const c of arr(row.c)) {
++      let ci = colIndex(c["@_r"]);
++      if (ci === null) ci = prevCol + 1;
++      prevCol = ci;
++      const t = c["@_t"] ?? "n";
++      let val;
++      const vtext = c.v === undefined ? undefined : textOf(c.v);
++      if (t === "inlineStr") val = richText(c.is);
++      else if (vtext === undefined) val = undefined;
++      else if (t === "s") val = sst[Number(vtext)] ?? BAD;
++      else if (t === "str") val = decodeXlsxText(vtext);
++      else if (t === "b" || t === "e") val = BAD;
++      else if (t === "d") {
++        const m = /^(\d{4}-\d{2}-\d{2})/.exec(vtext.trim());
++        val = m ? new DateValue(m[1]) : BAD;
++      } else {
++        const trimmed = vtext.trim();
++        if (trimmed === "") val = undefined;
++        else {
++          const n = Number(trimmed);
++          if (!Number.isFinite(n)) val = BAD;
++          else if (xfs[Number(c["@_s"] ?? 0)]) {
++            const d = serialToDate(n, epoch1904);
++            const dv = new DateValue(d ?? "");
++            dv.alt = numToDecimal(n);
++            val = dv;
++          } else val = n;
++        }
++      }
++      if (val !== undefined) cells.set(ci, val);
++    }
++    const hasValue = [...cells.values()].some((v) => v !== "");
++    if (hasValue) rows.push({ rn, cells });
++  }
++  const headerRow = rows.find((r) => r.rn === 1);
++  if (!headerRow) fatal("no header row");
++  const idx = {};
++  const hname = (v) => (typeof v === "string" ? trimST(v) : typeof v === "number" ? numToDecimal(v) : v instanceof DateValue ? v.alt ?? v.text : null);
++  for (const [ci, v] of [...headerRow.cells].sort((a, b) => a[0] - b[0])) {
++    const h = hname(v);
++    if (h !== null && !(h in idx)) idx[h] = ci;
++  }
++  for (const r of REQUIRED) if (!(r in idx)) fatal(`header missing column: ${r}`);
++  return rows.filter((r) => r.rn !== 1 && r.rn > 1).sort((a, b) => a.rn - b.rn).map(({ rn, cells }) => {
++    const obj = {};
++    for (const f of FIELDS) {
++      if (!(f in idx) || !cells.has(idx[f])) continue;
++      const v = cells.get(idx[f]);
++      obj[f] = v === BAD ? {} : v;
++    }
++    return typedRecord(rn, obj);
++  });
++};
++
++const main = () => {
++  const { input, groupBy, format } = parseArgs(process.argv.slice(2));
++  let buf;
++  try {
++    buf = readFileSync(input);
++  } catch (e) {
++    fatal(`cannot read ${input}: ${e.message}`);
++  }
++  const records = { csv: readCsv, json: readJson, jsonl: readJsonl, yaml: readYaml, xlsx: readXlsx }[format](buf);
+ 
+   const seen = new Set();
+   const totals = new Map();
+   const errs = [];
+-  for (const rec of records.slice(1)) {
+-    if (rec.blank) continue;
+-    const f = rec.fields;
+-    const get = (name) => (name in idx ? f[idx[name]] : undefined);
++  for (const rec of records) {
++    const get = rec.get;
+     const reason = (() => {
+-      if (f.length < header.length) return "too few fields";
++      if (rec.pre) return rec.pre;
+       for (const c of ["order_id", "customer_id", "sku"]) if (get(c) === "") return `empty ${c}`;
+       if (!validDate(get("order_date"))) return "invalid order_date";
+       if (!/^\d+$/.test(get("quantity")) || /^0+$/.test(get("quantity"))) return "invalid quantity";
+@@ -128,7 +366,7 @@ const main = () => {
+       totals.set(k, (totals.get(k) ?? 0n) + rev);
+       return null;
+     })();
+-    if (reason) errs.push(`${input}:${rec.line}: ${reason}\n`);
++    if (reason) errs.push(`${input}:${rec.loc}: ${reason}\n`);
+   }
+   const fmt = (c) => `${c / 100n}.${String(c % 100n).padStart(2, "0")}`;
+   let out = `${groupBy}\trevenue\n`;
+diff --git a/yarn.lock b/yarn.lock
+index fb57ccd..ca4bad0 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -2,3 +2,64 @@
+ # yarn lockfile v1
+ 
+ 
++"@nodable/entities@^3.1.0":
++  version "3.1.0"
++  resolved "https://registry.yarnpkg.com/@nodable/entities/-/entities-3.1.0.tgz#2ab366e0e607fdef8d65c5d84c58d191812bbd4b"
++  integrity sha512-LsS/DjHr+uDM647Gru/cA8+J3a3HfhttwCKLyuoyN7yXTFCxKBtSgMQBvrW9yNPa2/zDRUNuGPaH5QUFoa4arQ==
++
++anynum@^1.0.1:
++  version "1.0.1"
++  resolved "https://registry.yarnpkg.com/anynum/-/anynum-1.0.1.tgz#2aac00e08dfad3726c1d462e60dbc2f831659a44"
++  integrity sha512-N6//FLET/tXYNM/F6ABca1oH6fWB+KlTt909Le28WMDBk8oaT4vY17DCrwg2MvmuqUKt3Ni4N5dGJ/EoBgcO6A==
++
++fast-xml-builder@^1.3.2:
++  version "1.3.2"
++  resolved "https://registry.yarnpkg.com/fast-xml-builder/-/fast-xml-builder-1.3.2.tgz#08837335066983b7659f342ce1559869c068192e"
++  integrity sha512-OX91VSlShLPDgRZV7tk/YQ4l8tT75QziF5Ixg8g4PFbCVPjuTWwN+yQfAxLJ0dufJpprdOd6HlM74Jhd39TcBQ==
++  dependencies:
++    path-expression-matcher "^1.6.2"
++    xml-naming "^0.3.0"
++
++fast-xml-parser@^5.12.1:
++  version "5.12.1"
++  resolved "https://registry.yarnpkg.com/fast-xml-parser/-/fast-xml-parser-5.12.1.tgz#a0f3ebed7a1107db9456c0dd0ed233cbc00ae709"
++  integrity sha512-wR8dO/fx+z8C5exuem1e7BKOWvjsuzvjS/tvA/Xu3Z1zQqJGcXrPzXbcAiaMgp2KjreEROcTkmnnisrcmJ2hYQ==
++  dependencies:
++    "@nodable/entities" "^3.1.0"
++    fast-xml-builder "^1.3.2"
++    is-unsafe "^2.0.3"
++    path-expression-matcher "^1.6.2"
++    strnum "^2.5.1"
++    xml-naming "^0.3.0"
++
++fflate@^0.8.3:
++  version "0.8.3"
++  resolved "https://registry.yarnpkg.com/fflate/-/fflate-0.8.3.tgz#bc27d8eb30343d4d512abb03480202ce65d825fc"
++  integrity sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==
++
++is-unsafe@^2.0.3:
++  version "2.0.3"
++  resolved "https://registry.yarnpkg.com/is-unsafe/-/is-unsafe-2.0.3.tgz#c8bc72c9d354dc9483dab9c26ff69bf5ec68d7b0"
++  integrity sha512-ZBllczCCO267vgdFb6Tq3pv+LhHaCiGMdr+ZsuL+OopruAg7S+3ZDs1vD0RPC0uSrkjzbraxaGjtX1YBxjPeFQ==
++
++path-expression-matcher@^1.6.2:
++  version "1.6.2"
++  resolved "https://registry.yarnpkg.com/path-expression-matcher/-/path-expression-matcher-1.6.2.tgz#567c73c07197e9dcef24e90edcdc571056599168"
++  integrity sha512-enSlaiat05iasnzmgNxRj8reFdj3puY2QpNgP1aPIaVfT6nn9ICuPoFlKHk8EN22HcwewshO+mN2DGbkCEOtqQ==
++
++strnum@^2.5.1:
++  version "2.5.1"
++  resolved "https://registry.yarnpkg.com/strnum/-/strnum-2.5.1.tgz#6b2f52021fa47589c3cf643afd80032dfa312b78"
++  integrity sha512-UM4nTLWzQiDBseVxUGxN0wJzIk0UU89Qi7pKXz9qISo+lhviJikTuikBsK/oFRlpvYHvSdz0TVoLyQ+sEpYwxA==
++  dependencies:
++    anynum "^1.0.1"
++
++xml-naming@^0.3.0:
++  version "0.3.0"
++  resolved "https://registry.yarnpkg.com/xml-naming/-/xml-naming-0.3.0.tgz#46c1e18bfe2858479982dd2accf34d16e749eda2"
++  integrity sha512-ghig2TBE/H11aOVgmahA3MhimvkBr6JIYknH/Dhdk10nXwdbIqBJsbfMxpvFPG8bAw77gN29aQWvKpmVoPlvPQ==
++
++yaml@^2.9.1:
++  version "2.9.1"
++  resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.9.1.tgz#c16233fb31944e705cfefaff38795587f57588ce"
++  integrity sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==

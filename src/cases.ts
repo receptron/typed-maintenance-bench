@@ -22,7 +22,7 @@ export type Observed = { exitCode: number | null; stdout: string; stderr: string
 
 export type Verdict = { id: string; passed: boolean; failures: string[] };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 export const isStringList = (value: unknown): value is string[] =>

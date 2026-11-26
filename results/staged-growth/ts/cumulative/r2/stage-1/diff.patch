@@ -1,0 +1,234 @@
+diff --git a/src/cli.ts b/src/cli.ts
+new file mode 100644
+index 0000000..be67a0c
+--- /dev/null
++++ b/src/cli.ts
+@@ -0,0 +1,228 @@
++import { readFileSync } from "node:fs";
++
++class Fatal extends Error {}
++
++interface Rec {
++  line: number;
++  fields: string[];
++}
++
++const WS = /^[ \t]+|[ \t]+$/g;
++
++function parseCsv(text: string): Rec[] {
++  const recs: Rec[] = [];
++  const n = text.length;
++  let i = 0;
++  let line = 1;
++  while (i < n) {
++    const startLine = line;
++    // completely empty line
++    if (text[i] === "\n") {
++      i++;
++      line++;
++      continue;
++    }
++    if (text[i] === "\r" && text[i + 1] === "\n") {
++      i += 2;
++      line++;
++      continue;
++    }
++    const fields: string[] = [];
++    for (;;) {
++      // parse one field
++      let j = i;
++      while (j < n && (text[j] === " " || text[j] === "\t")) j++;
++      let value = "";
++      if (text[j] === '"') {
++        j++;
++        for (;;) {
++          if (j >= n) break;
++          const c = text[j]!;
++          if (c === '"') {
++            if (text[j + 1] === '"') {
++              value += '"';
++              j += 2;
++              continue;
++            }
++            j++;
++            break;
++          }
++          if (c === "\n") line++;
++          value += c;
++          j++;
++        }
++        // anything between closing quote and delimiter is kept literally
++        while (j < n && text[j] !== "," && text[j] !== "\n" && !(text[j] === "\r" && text[j + 1] === "\n")) {
++          value += text[j];
++          j++;
++        }
++      } else {
++        j = i;
++        while (j < n && text[j] !== "," && text[j] !== "\n" && !(text[j] === "\r" && text[j + 1] === "\n")) j++;
++        value = text.slice(i, j);
++      }
++      fields.push(value.replace(WS, ""));
++      if (j < n && text[j] === ",") {
++        i = j + 1;
++        continue;
++      }
++      // end of record
++      if (j < n) {
++        if (text[j] === "\r") j++;
++        j++; // LF
++        line++;
++      }
++      i = j;
++      break;
++    }
++    recs.push({ line: startLine, fields });
++  }
++  return recs;
++}
++
++function parseArgs(argv: string[]): { input: string; groupBy: string } {
++  const opts = new Map<string, string>();
++  for (let k = 0; k < argv.length; k++) {
++    let a = argv[k]!;
++    let v: string | undefined;
++    const eq = a.indexOf("=");
++    if (a.startsWith("--") && eq > 0) {
++      v = a.slice(eq + 1);
++      a = a.slice(0, eq);
++    }
++    if (a !== "--input" && a !== "--group-by") throw new Fatal(`unknown option: ${a}`);
++    if (v === undefined) {
++      v = argv[++k];
++      if (v === undefined) throw new Fatal(`missing value for ${a}`);
++    }
++    if (opts.has(a)) throw new Fatal(`duplicate option: ${a}`);
++    opts.set(a, v);
++  }
++  const input = opts.get("--input");
++  const groupBy = opts.get("--group-by");
++  if (input === undefined || input === "") throw new Fatal("missing required option --input");
++  if (groupBy === undefined) throw new Fatal("missing required option --group-by");
++  if (groupBy !== "day" && groupBy !== "sku" && groupBy !== "customer") {
++    throw new Fatal(`invalid --group-by value: ${groupBy}`);
++  }
++  return { input, groupBy };
++}
++
++function validDate(s: string): boolean {
++  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
++  if (!m) return false;
++  const y = Number(m[1]);
++  const mo = Number(m[2]);
++  const d = Number(m[3]);
++  if (mo < 1 || mo > 12 || d < 1) return false;
++  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
++  const dim = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]!;
++  return d <= dim;
++}
++
++function cents(s: string): bigint | null {
++  const m = /^(\d+)(?:\.(\d{1,2}))?$/.exec(s);
++  if (!m) return null;
++  return BigInt(m[1]!) * 100n + BigInt((m[2] ?? "").padEnd(2, "0") || "0");
++}
++
++function cmp(a: string, b: string): number {
++  const x = Array.from(a);
++  const y = Array.from(b);
++  const l = Math.min(x.length, y.length);
++  for (let i = 0; i < l; i++) {
++    const p = x[i]!.codePointAt(0)!;
++    const q = y[i]!.codePointAt(0)!;
++    if (p !== q) return p - q;
++  }
++  return x.length - y.length;
++}
++
++function fmt(c: bigint): string {
++  const w = c / 100n;
++  const f = c % 100n;
++  return `${w}.${f.toString().padStart(2, "0")}`;
++}
++
++function main(): { out: string; err: string } {
++  const { input, groupBy } = parseArgs(process.argv.slice(2));
++  let text: string;
++  try {
++    text = readFileSync(input, "utf8");
++  } catch (e) {
++    throw new Fatal(`cannot read ${input}: ${(e as Error).message}`);
++  }
++  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
++  const recs = parseCsv(text);
++  if (recs.length === 0) throw new Fatal("no header line");
++  const header = recs[0]!.fields;
++  const idx = new Map<string, number>();
++  header.forEach((h, k) => {
++    if (!idx.has(h)) idx.set(h, k);
++  });
++  const required = ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price"];
++  for (const r of required) if (!idx.has(r)) throw new Fatal(`header missing column: ${r}`);
++  const col = (name: string) => idx.get(name)!;
++  const iDisc = idx.get("discount");
++
++  const seen = new Set<string>();
++  const sums = new Map<string, bigint>();
++  let total = 0n;
++  let err = "";
++
++  for (const rec of recs.slice(1)) {
++    const f = rec.fields;
++    const bad = (reason: string) => {
++      err += `${input}:${rec.line}: ${reason}\n`;
++    };
++    if (f.length < header.length) {
++      bad("too few fields");
++      continue;
++    }
++    const orderId = f[col("order_id")]!;
++    const customer = f[col("customer_id")]!;
++    const date = f[col("order_date")]!;
++    const sku = f[col("sku")]!;
++    const qtyS = f[col("quantity")]!;
++    const priceS = f[col("unit_price")]!;
++    const discS = iDisc === undefined ? "" : f[iDisc]!;
++    if (orderId === "") { bad("empty order_id"); continue; }
++    if (customer === "") { bad("empty customer_id"); continue; }
++    if (!validDate(date)) { bad(`invalid order_date: ${date}`); continue; }
++    if (sku === "") { bad("empty sku"); continue; }
++    if (!/^\d+$/.test(qtyS) || BigInt(qtyS) < 1n) { bad(`invalid quantity: ${qtyS}`); continue; }
++    const price = cents(priceS);
++    if (price === null) { bad(`invalid unit_price: ${priceS}`); continue; }
++    let disc = 0n;
++    if (discS !== "") {
++      const d = cents(discS);
++      if (d === null || d > 100n) { bad(`invalid discount: ${discS}`); continue; }
++      disc = d;
++    }
++    const dk = JSON.stringify([orderId, sku]);
++    if (seen.has(dk)) { bad(`duplicate (order_id, sku): ${orderId}, ${sku}`); continue; }
++    seen.add(dk);
++    const rev = (price * BigInt(qtyS) * (100n - disc) + 50n) / 100n;
++    const key = groupBy === "day" ? date : groupBy === "sku" ? sku : customer;
++    sums.set(key, (sums.get(key) ?? 0n) + rev);
++    total += rev;
++  }
++
++  let out = `${groupBy}\trevenue\n`;
++  for (const k of [...sums.keys()].sort(cmp)) out += `${k}\t${fmt(sums.get(k)!)}\n`;
++  out += `TOTAL\t${fmt(total)}\n`;
++  return { out, err };
++}
++
++try {
++  const { out, err } = main();
++  if (err) process.stderr.write(err);
++  process.stdout.write(out);
++} catch (e) {
++  if (e instanceof Fatal) {
++    process.stderr.write(`error: ${e.message}\n`);
++    process.exitCode = 2;
++  } else {
++    throw e;
++  }
++}

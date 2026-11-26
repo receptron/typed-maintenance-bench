@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { runAgent, type AgentId } from "./agents.js";
+import { runAgent, type AgentId, type AuthMode } from "./agents.js";
 import type { Arm } from "./arms.js";
 import { countTreeEscapes, type EscapeCounts } from "./escapes.js";
 import { gradeTree, type Grade } from "./grade.js";
@@ -18,6 +18,7 @@ export type StageRun = {
   model: string;
   timeoutMs: number;
   budgetUsd: number;
+  auth: AuthMode;
   resultsDir: string;
 };
 
@@ -50,8 +51,8 @@ type AgentOutcome = {
 
 const executeAgent = async (run: StageRun, tree: string, outDir: string): Promise<AgentOutcome> => {
   const startedAt = new Date().toISOString();
-  const { arm, stage, model, timeoutMs, budgetUsd } = run;
-  const result = await runAgent(run.agent, { arm, stage, tree, logDir: outDir, model, timeoutMs, budgetUsd });
+  const { arm, stage, model, timeoutMs, budgetUsd, auth } = run;
+  const result = await runAgent(run.agent, { arm, stage, tree, logDir: outDir, model, timeoutMs, budgetUsd, auth });
   writeFileSync(path.join(outDir, "agent.stderr.log"), result.output);
   const endedAt = new Date().toISOString();
   return {

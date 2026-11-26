@@ -64,7 +64,7 @@ Each arm runs in two modes: **cumulative** (each stage builds on that arm's own 
 
 ### Status
 
-Stages 1–2 are runnable for the pilot arms (`js`, `ts`, `ts-noany`), in both modes. The harness passes its self-test (the reference implementation passes every hidden case in every arm and mode). No agent has been run yet, so there are no results.
+Stages 1–2 are runnable for the pilot arms (`js`, `ts`, `ts-noany`), in both modes. The harness passes its self-test (the reference implementation passes every hidden case in every arm and mode). A pilot with Claude Code (arms `js`, `ts`, `ts-noany`, cumulative, stages 1–2) has been run; the raw outputs are in [results/](results/README.md) and the first report is [reports/2026-11-26-pilot-stages-1-2.md](reports/2026-11-26-pilot-stages-1-2.md). Stages 1–2 turned out too easy to separate the arms on correctness, so stages 3–4 are next.
 
 ### Reproducing
 
@@ -72,6 +72,7 @@ Stages 1–2 are runnable for the pilot arms (`js`, `ts`, `ts-noany`), in both m
 yarn install && yarn build
 yarn check:reference                                   # harness self-test, no API calls
 ANTHROPIC_API_KEY=... yarn bench --arm ts --mode cumulative --repeat r1
+yarn bench --arm ts --mode cumulative --repeat r1 --auth subscription   # on a logged-in Claude subscription
 ```
 
 Each run writes one directory per stage under `results/`, with the transcript, the diff, the grade and the final tree. Every report will name the command and the commit it was produced from. Details: [src/README.md](src/README.md).
@@ -138,7 +139,7 @@ Evil Martians は、[型のエラーを直す時間はコーディングエー�
 
 ### 現状
 
-段階 1〜2 を、小さく試す組（`js`、`ts`、`ts-noany`）で、2 つの進め方の両方で走らせられます。ハーネスは自己確認に通っています（参照実装が、全組・全進め方で、隠したテストにすべて通る）。エージェントはまだ走らせていないので、結果はまだありません。
+段階 1〜2 を、小さく試す組（`js`、`ts`、`ts-noany`）で、2 つの進め方の両方で走らせられます。ハーネスは自己確認に通っています（参照実装が、全組・全進め方で、隠したテストにすべて通る）。Claude Code での小さな試し走り（`js`、`ts`、`ts-noany`、積み上げ、段階 1〜2）を走らせました。生の出力は [results/](results/README.md) に、最初のレポートは [reports/2026-11-26-pilot-stages-1-2.md](reports/2026-11-26-pilot-stages-1-2.md) にあります。段階 1〜2 は易しすぎて、正しさでは組の差が出なかったので、次は段階 3〜4 を作ります。
 
 ### 再現する
 
@@ -146,6 +147,7 @@ Evil Martians は、[型のエラーを直す時間はコーディングエー�
 yarn install && yarn build
 yarn check:reference                                   # ハーネスの自己確認。API は呼ばない
 ANTHROPIC_API_KEY=... yarn bench --arm ts --mode cumulative --repeat r1
+yarn bench --arm ts --mode cumulative --repeat r1 --auth subscription   # ログイン中の Claude のサブスクリプションで走らせる
 ```
 
 1 回の実行で、段階ごとに 1 つのディレクトリが `results/` の下にでき、エージェントのやり取りの記録、変更の差分、採点、最後のコードが残ります。どのレポートにも、それを作ったコマンドとコミットを書きます。詳しくは [src/README.md](src/README.md)。

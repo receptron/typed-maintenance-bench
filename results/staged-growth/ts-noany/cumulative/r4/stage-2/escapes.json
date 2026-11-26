@@ -1,0 +1,10 @@
+{
+  "anyKeyword": 0,
+  "asAssertion": 0,
+  "angleAssertion": 0,
+  "nonNullAssertion": 0,
+  "tsIgnore": 0,
+  "tsExpectError": 0,
+  "tsNocheck": 0,
+  "eslintDisable": 0
+}
