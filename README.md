@@ -72,6 +72,7 @@ Stages 1–2 are runnable for the pilot arms (`js`, `ts`, `ts-noany`), in both m
 yarn install && yarn build
 yarn check:reference                                   # harness self-test, no API calls
 ANTHROPIC_API_KEY=... yarn bench --arm ts --mode cumulative --repeat r1
+yarn bench --arm ts --mode cumulative --repeat r1 --auth subscription   # on a logged-in Claude subscription
 ```
 
 Each run writes one directory per stage under `results/`, with the transcript, the diff, the grade and the final tree. Every report will name the command and the commit it was produced from. Details: [src/README.md](src/README.md).
@@ -146,6 +147,7 @@ Evil Martians は、[型のエラーを直す時間はコーディングエー�
 yarn install && yarn build
 yarn check:reference                                   # ハーネスの自己確認。API は呼ばない
 ANTHROPIC_API_KEY=... yarn bench --arm ts --mode cumulative --repeat r1
+yarn bench --arm ts --mode cumulative --repeat r1 --auth subscription   # ログイン中の Claude のサブスクリプションで走らせる
 ```
 
 1 回の実行で、段階ごとに 1 つのディレクトリが `results/` の下にでき、エージェントのやり取りの記録、変更の差分、採点、最後のコードが残ります。どのレポートにも、それを作ったコマンドとコミットを書きます。詳しくは [src/README.md](src/README.md)。

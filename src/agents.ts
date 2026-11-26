@@ -7,6 +7,10 @@ export type AgentId = "claude" | "reference";
 export const AGENT_IDS: readonly AgentId[] = ["claude", "reference"];
 export const isAgentId = (value: string): value is AgentId => AGENT_IDS.some((agent) => agent === value);
 
+export type AuthMode = "api-key" | "subscription";
+export const AUTH_MODES: readonly AuthMode[] = ["api-key", "subscription"];
+export const isAuthMode = (value: string): value is AuthMode => AUTH_MODES.some((auth) => auth === value);
+
 export type AgentOptions = {
   arm: Arm;
   stage: number;
@@ -15,17 +19,21 @@ export type AgentOptions = {
   model: string;
   timeoutMs: number;
   budgetUsd: number;
+  auth: AuthMode;
 };
 
 export const AGENT_PROMPT =
   "Read TASK.md in the current directory and complete the task it describes. Work only inside this directory.";
 export const TRANSCRIPT_FILE = "agent.jsonl";
 
-// --bare skips the host's CLAUDE.md, hooks, plugins and memory, so a run does not depend on whose machine it is on.
+// Both flags skip the host's CLAUDE.md, hooks, plugins and memory, so a run does not depend on whose machine it is on;
+// --bare accepts only ANTHROPIC_API_KEY, --safe-mode also accepts the logged-in subscription.
+const ISOLATION_FLAG: Record<AuthMode, string> = { "api-key": "--bare", subscription: "--safe-mode" };
+
 export const claudeCommand = (options: AgentOptions): string[] => [
   "claude",
   AGENT_PROMPT,
-  "--bare",
+  ISOLATION_FLAG[options.auth],
   "--print",
   "--output-format",
   "stream-json",

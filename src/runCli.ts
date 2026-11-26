@@ -1,5 +1,5 @@
 import { parseArgs } from "node:util";
-import { isAgentId } from "./agents.js";
+import { isAgentId, isAuthMode, type AuthMode } from "./agents.js";
 import { ARMS, isArmId } from "./arms.js";
 import { DEFAULT_RESULTS_DIR } from "./paths.js";
 import { runStage, type StageRun } from "./runStage.js";
@@ -9,7 +9,8 @@ import type { Mode } from "./tree.js";
 const DEFAULT_TIMEOUT_MIN = 60;
 const MS_PER_MIN = 60_000;
 const USAGE = `usage: yarn bench --arm <js|ts|ts-noany> --mode <cumulative|reset> --repeat <id>
-  [--stages 1-${MAX_STAGE}] [--agent claude|reference] [--model <id>] [--timeout-min <n>] [--budget-usd <n>] [--results-dir <dir>]`;
+  [--stages 1-${MAX_STAGE}] [--agent claude|reference] [--model <id>] [--timeout-min <n>] [--budget-usd <n>]
+  [--auth api-key|subscription] [--results-dir <dir>]`;
 
 const OPTIONS = {
   arm: { type: "string" },
@@ -20,6 +21,7 @@ const OPTIONS = {
   model: { type: "string", default: "claude-sonnet-5-5" },
   "timeout-min": { type: "string", default: String(DEFAULT_TIMEOUT_MIN) },
   "budget-usd": { type: "string", default: "10" },
+  auth: { type: "string", default: "api-key" },
   "results-dir": { type: "string", default: DEFAULT_RESULTS_DIR },
 } as const;
 
@@ -36,6 +38,13 @@ const requireValid = <T extends string>(
 
 const isPresent = (value: string): value is string => value.length > 0;
 
+// Claude Code prefers ANTHROPIC_API_KEY when it is set, so a run labelled "subscription" would silently bill the key.
+const checkAuth = (auth: AuthMode): AuthMode => {
+  if (auth === "subscription" && process.env["ANTHROPIC_API_KEY"] !== undefined)
+    throw new Error("--auth subscription needs ANTHROPIC_API_KEY to be unset");
+  return auth;
+};
+
 const toRun = (
   values: ReturnType<typeof parseArgs<{ options: typeof OPTIONS }>>["values"],
 ): Omit<StageRun, "stage"> => ({
@@ -46,6 +55,7 @@ const toRun = (
   model: values.model,
   timeoutMs: Number(values["timeout-min"]) * MS_PER_MIN,
   budgetUsd: Number(values["budget-usd"]),
+  auth: checkAuth(requireValid(values.auth, isAuthMode, "auth")),
   resultsDir: values["results-dir"],
 });
 

@@ -26,17 +26,20 @@ const problemsIn = ({ grade, escapes }: StageResult): string[] => {
   return problems;
 };
 
+const referenceRun = (arm: Arm, mode: Mode, resultsDir: string): Omit<StageRun, "stage"> => ({
+  arm,
+  mode,
+  repeat: "check",
+  agent: "reference",
+  model: "none",
+  timeoutMs: UNUSED_TIMEOUT_MS,
+  budgetUsd: 0,
+  auth: "api-key",
+  resultsDir,
+});
+
 const checkArmMode = async (arm: Arm, mode: Mode, resultsDir: string): Promise<string[]> => {
-  const base: Omit<StageRun, "stage"> = {
-    arm,
-    mode,
-    repeat: "check",
-    agent: "reference",
-    model: "none",
-    timeoutMs: UNUSED_TIMEOUT_MS,
-    budgetUsd: 0,
-    resultsDir,
-  };
+  const base = referenceRun(arm, mode, resultsDir);
   const problems: string[] = [];
   for (const stage of STAGES) {
     const result = await runStage({ ...base, stage });

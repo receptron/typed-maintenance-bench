@@ -5,12 +5,12 @@ yarn install && yarn build
 yarn gen:fixtures       # rewrite every fixture from experiments/staged-growth/fixtures-src/
 yarn check:reference    # self-test: the reference implementation must pass every hidden case in every arm and mode
 yarn test               # unit tests for the pure parts
-yarn bench --arm ts --mode cumulative --repeat r1 [--stages 1-2] [--agent claude|reference] [--model <id>]
+yarn bench --arm ts --mode cumulative --repeat r1 [--stages 1-2] [--agent claude|reference] [--auth api-key|subscription] [--model <id>]
 yarn grade --tree results/.../stage-2/tree --arm ts --stage 2   # recompute a grade from a saved tree
 yarn escapes <dir>      # count escape hatches in a tree
 ```
 
-`yarn bench` with the default `claude` agent runs Claude Code with `--bare`, so the host's CLAUDE.md, hooks, plugins and memory do not leak into a run. In that mode Claude Code authenticates only with `ANTHROPIC_API_KEY`.
+`yarn bench` with the default `claude` agent runs Claude Code with `--bare`, so the host's CLAUDE.md, hooks, plugins and memory do not leak into a run. In that mode Claude Code authenticates only with `ANTHROPIC_API_KEY`. To run on a logged-in Claude subscription instead, pass `--auth subscription` with `ANTHROPIC_API_KEY` unset: the agent then runs with `--safe-mode`, which skips the same host configuration.
 
 | File | Job |
 |---|---|
