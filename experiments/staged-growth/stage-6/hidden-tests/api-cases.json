@@ -1,0 +1,2118 @@
+{
+  "cases": [
+    {
+      "id": "s6-api-read-csv",
+      "description": "Records carry unitPrice with a currency, and orderDate as written",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders6.csv"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "C1",
+              "orderDate": "2026-03-01",
+              "sku": "A",
+              "quantity": 2,
+              "unitPrice": {
+                "cents": 1000,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "C1",
+              "orderDate": "2026-03-01",
+              "sku": "A",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 500,
+                "currency": "EUR"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "3",
+              "customerId": "C2",
+              "orderDate": "2026-03-01T23:30:00-05:00",
+              "sku": "B",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 300,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "4",
+              "customerId": "C2",
+              "orderDate": "2026-03-02T00:30:00+09:00",
+              "sku": "A",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 400,
+                "currency": "JPY"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "6",
+              "customerId": "C3",
+              "orderDate": "2026-03-02T10:00:00Z",
+              "sku": "A",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 200,
+                "currency": "EUR"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "8",
+              "customerId": "C3",
+              "orderDate": "2026-03-09T04:30:00Z",
+              "sku": "B",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 100,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "11",
+              "customerId": "C4",
+              "orderDate": "2026-03-03T05:15+05:30",
+              "sku": "A",
+              "quantity": 2,
+              "unitPrice": {
+                "cents": 50,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "12",
+              "customerId": "C1",
+              "orderDate": "2026-03-04",
+              "sku": "A",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 700,
+                "currency": "USD"
+              },
+              "discountPercent": 10,
+              "notes": "note"
+            },
+            {
+              "orderId": "13",
+              "customerId": "C2",
+              "orderDate": "2026-03-04T12:00:00Z",
+              "sku": "A",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 200,
+                "currency": "EUR"
+              },
+              "discountPercent": 50,
+              "notes": ""
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders6.csv",
+              "location": "6",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders6.csv",
+              "location": "8",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders6.csv",
+              "location": "10",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders6.csv",
+              "location": "11",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders6.csv",
+              "location": "15",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders6.csv",
+              "location": "16",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-read-json",
+      "description": "Typed values in the new record shape",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders6.json"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "j1",
+              "customerId": "J1",
+              "orderDate": "2026-03-01T20:00:00-08:00",
+              "sku": "A",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 350,
+                "currency": "EUR"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "j2",
+              "customerId": "J1",
+              "orderDate": "2026-03-01",
+              "sku": "A",
+              "quantity": 2,
+              "unitPrice": {
+                "cents": 100,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders6.json",
+              "location": "#3",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders6.json",
+              "location": "#4",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders6.json",
+              "location": "#5",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders6.json",
+              "location": "#6",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders6.json",
+              "location": "#7",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-read-tsv",
+      "description": "TSV with the currency last",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders6.tsv"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "T1",
+              "orderDate": "2026-03-01T22:00:00-03:00",
+              "sku": "A",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 100,
+                "currency": "EUR"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "T1",
+              "orderDate": "2026-03-02",
+              "sku": "A",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 200,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "3",
+              "customerId": "T2",
+              "orderDate": "2026-03-02",
+              "sku": "B",
+              "quantity": 2,
+              "unitPrice": {
+                "cents": 150,
+                "currency": "JPY"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            }
+          ],
+          "warnings": []
+        }
+      }
+    },
+    {
+      "id": "s6-api-read-stage-3",
+      "description": "Stage 3 data in the new record shape",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.csv"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "C1",
+              "orderDate": "2026-03-01",
+              "sku": "A-1",
+              "quantity": 2,
+              "unitPrice": {
+                "cents": 1000,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "C2",
+              "orderDate": "2026-03-01",
+              "sku": "B|x",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 550,
+                "currency": "USD"
+              },
+              "discountPercent": 10,
+              "notes": ""
+            },
+            {
+              "orderId": "3",
+              "customerId": "C1",
+              "orderDate": "2026-03-02",
+              "sku": "A-1",
+              "quantity": 3,
+              "unitPrice": {
+                "cents": 125,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "4",
+              "customerId": "C'3",
+              "orderDate": "2026-03-02",
+              "sku": "<b>&\"q\"",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 700,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "5",
+              "customerId": "C2",
+              "orderDate": "2026-03-03",
+              "sku": "A-2",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 99,
+                "currency": "USD"
+              },
+              "discountPercent": 50,
+              "notes": ""
+            },
+            {
+              "orderId": "6",
+              "customerId": "C1",
+              "orderDate": "2026-03-03",
+              "sku": "ß",
+              "quantity": 4,
+              "unitPrice": {
+                "cents": 250,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": "gift wrap"
+            },
+            {
+              "orderId": "8",
+              "customerId": "C2",
+              "orderDate": "2026-03-05",
+              "sku": "B|x",
+              "quantity": 2,
+              "unitPrice": {
+                "cents": 300,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "9",
+              "customerId": "C1",
+              "orderDate": "2026-03-05",
+              "sku": "A",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 100,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders.csv",
+              "location": "8",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.csv",
+              "location": "9",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-read-tsv-stage-5",
+      "description": "Stage 5 TSV in the new record shape",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.tsv"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "C1",
+              "orderDate": "2026-12-28",
+              "sku": "A",
+              "quantity": 2,
+              "unitPrice": {
+                "cents": 1000,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "C2",
+              "orderDate": "2026-12-31",
+              "sku": "\"B\"",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 550,
+                "currency": "USD"
+              },
+              "discountPercent": 10,
+              "notes": ""
+            },
+            {
+              "orderId": "3",
+              "customerId": "C1",
+              "orderDate": "2027-01-01",
+              "sku": "A",
+              "quantity": 3,
+              "unitPrice": {
+                "cents": 125,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "4",
+              "customerId": "C/3",
+              "orderDate": "2027-01-03",
+              "sku": "A",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 700,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "5",
+              "customerId": "C2",
+              "orderDate": "2027-01-04",
+              "sku": "B",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 99,
+                "currency": "USD"
+              },
+              "discountPercent": 50,
+              "notes": ""
+            },
+            {
+              "orderId": "6",
+              "customerId": "C1",
+              "orderDate": "2026-12-27",
+              "sku": "A",
+              "quantity": 4,
+              "unitPrice": {
+                "cents": 250,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": "note"
+            },
+            {
+              "orderId": "9",
+              "customerId": "C.1",
+              "orderDate": "2027-01-10",
+              "sku": "X",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 100,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders.tsv",
+              "location": "9",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.tsv",
+              "location": "10",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.tsv",
+              "location": "11",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-plugin-read",
+      "description": "Plugin records in the new shape",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.pipe"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "P1",
+              "orderDate": "2026-03-01",
+              "sku": "A",
+              "quantity": 2,
+              "unitPrice": {
+                "cents": 100,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "P1",
+              "orderDate": "2026-03-02",
+              "sku": "B",
+              "quantity": 1,
+              "unitPrice": {
+                "cents": 250,
+                "currency": "USD"
+              },
+              "discountPercent": 20,
+              "notes": "x"
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders.pipe",
+              "location": "4",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.pipe",
+              "location": "5",
+              "reason": "too few fields"
+            },
+            {
+              "file": "orders.pipe",
+              "location": "6",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-plugin-typed",
+      "description": "Typed plugin values in the new shape",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "typed",
+              "extensions": [
+                ".typed"
+              ],
+              "parse": {
+                "$plugin": "typed"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "read",
+      "args": [
+        {
+          "path": "any.typed"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "T1",
+              "orderDate": "2026-03-01",
+              "sku": "T",
+              "quantity": 2,
+              "unitPrice": {
+                "cents": 150,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": "5"
+            },
+            {
+              "orderId": "4",
+              "customerId": "T3",
+              "orderDate": "2026-03-03",
+              "sku": "U",
+              "quantity": 3,
+              "unitPrice": {
+                "cents": 50,
+                "currency": "USD"
+              },
+              "discountPercent": 0,
+              "notes": ""
+            }
+          ],
+          "warnings": [
+            {
+              "file": "any.typed",
+              "location": "b",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "any.typed",
+              "location": "c",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "any.typed",
+              "location": "d",
+              "reason": "rejected by the plugin"
+            },
+            {
+              "file": "any.typed",
+              "location": "e",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "any.typed",
+              "location": "f",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-plugin-currency",
+      "description": "A plugin's fields carry the currency and a timestamp",
+      "setup": [
+        {
+          "call": "registerFormat",
+          "args": [
+            {
+              "name": "pipe",
+              "extensions": [
+                ".pipe"
+              ],
+              "parse": {
+                "$plugin": "pipe"
+              }
+            }
+          ]
+        }
+      ],
+      "call": "pipeline",
+      "args": [
+        {
+          "path": "orders6.pipe"
+        },
+        {
+          "groupBy": [
+            "day"
+          ]
+        },
+        "text"
+      ],
+      "expect": {
+        "returns": "day\trevenue\n2026-03-02\t1.00 EUR\nTOTAL\t1.00 EUR\n"
+      }
+    },
+    {
+      "id": "s6-api-agg-day-utc",
+      "description": "aggregate by day in UTC by default",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ]
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders6.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "EUR",
+              "revenueCents": 500
+            },
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "JPY",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "USD",
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "currency": "EUR",
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "currency": "USD",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "2026-03-04"
+              ],
+              "currency": "EUR",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-04"
+              ],
+              "currency": "USD",
+              "revenueCents": 630
+            },
+            {
+              "key": [
+                "2026-03-09"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 800
+            },
+            {
+              "currency": "JPY",
+              "cents": 400
+            },
+            {
+              "currency": "USD",
+              "cents": 3130
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-agg-day-new-york",
+      "description": "aggregate by day in New York",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "timeZone": "America/New_York"
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders6.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "EUR",
+              "revenueCents": 500
+            },
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "JPY",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "USD",
+              "revenueCents": 2300
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "currency": "EUR",
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-04"
+              ],
+              "currency": "EUR",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-04"
+              ],
+              "currency": "USD",
+              "revenueCents": 630
+            },
+            {
+              "key": [
+                "2026-03-09"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 800
+            },
+            {
+              "currency": "JPY",
+              "cents": 400
+            },
+            {
+              "currency": "USD",
+              "cents": 3130
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-agg-day-tokyo-machine",
+      "description": "The machine's zone does not matter",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "timeZone": "Asia/Tokyo"
+        }
+      ],
+      "env": {
+        "TZ": "America/New_York"
+      },
+      "recordsFrom": {
+        "path": "orders6.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "EUR",
+              "revenueCents": 500
+            },
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "USD",
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "currency": "EUR",
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "currency": "JPY",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "currency": "USD",
+              "revenueCents": 300
+            },
+            {
+              "key": [
+                "2026-03-03"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-04"
+              ],
+              "currency": "EUR",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-04"
+              ],
+              "currency": "USD",
+              "revenueCents": 630
+            },
+            {
+              "key": [
+                "2026-03-09"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 800
+            },
+            {
+              "currency": "JPY",
+              "cents": 400
+            },
+            {
+              "currency": "USD",
+              "cents": 3130
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-agg-sku",
+      "description": "aggregate by SKU and currency",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "sku"
+          ]
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders6.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "A"
+              ],
+              "currency": "EUR",
+              "revenueCents": 800
+            },
+            {
+              "key": [
+                "A"
+              ],
+              "currency": "JPY",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "A"
+              ],
+              "currency": "USD",
+              "revenueCents": 2730
+            },
+            {
+              "key": [
+                "B"
+              ],
+              "currency": "USD",
+              "revenueCents": 400
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 800
+            },
+            {
+              "currency": "JPY",
+              "cents": 400
+            },
+            {
+              "currency": "USD",
+              "cents": 3130
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-agg-customer-day",
+      "description": "Two keys, then the currency",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "customer",
+            "day"
+          ]
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders6.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "customer",
+            "day"
+          ],
+          "rows": [
+            {
+              "key": [
+                "C1",
+                "2026-03-01"
+              ],
+              "currency": "EUR",
+              "revenueCents": 500
+            },
+            {
+              "key": [
+                "C1",
+                "2026-03-01"
+              ],
+              "currency": "USD",
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "C1",
+                "2026-03-04"
+              ],
+              "currency": "USD",
+              "revenueCents": 630
+            },
+            {
+              "key": [
+                "C2",
+                "2026-03-01"
+              ],
+              "currency": "JPY",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "C2",
+                "2026-03-02"
+              ],
+              "currency": "USD",
+              "revenueCents": 300
+            },
+            {
+              "key": [
+                "C2",
+                "2026-03-04"
+              ],
+              "currency": "EUR",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "C3",
+                "2026-03-02"
+              ],
+              "currency": "EUR",
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "C3",
+                "2026-03-09"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "C4",
+                "2026-03-02"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 800
+            },
+            {
+              "currency": "JPY",
+              "cents": 400
+            },
+            {
+              "currency": "USD",
+              "cents": 3130
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-agg-range-tokyo",
+      "description": "A date range in Tokyo",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "customer"
+          ],
+          "from": "2026-03-02",
+          "to": "2026-03-03",
+          "timeZone": "Asia/Tokyo"
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders6.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "customer"
+          ],
+          "rows": [
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "JPY",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "USD",
+              "revenueCents": 300
+            },
+            {
+              "key": [
+                "C3"
+              ],
+              "currency": "EUR",
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "C4"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 200
+            },
+            {
+              "currency": "JPY",
+              "cents": 400
+            },
+            {
+              "currency": "USD",
+              "cents": 400
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-agg-empty",
+      "description": "No rows: empty totals",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "skuPrefix": "Z"
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders6.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [],
+          "totals": []
+        }
+      }
+    },
+    {
+      "id": "s6-api-agg-chatham",
+      "description": "A zone 13:45 ahead under daylight saving time",
+      "call": "aggregate",
+      "args": [
+        [
+          {
+            "orderId": "h1",
+            "customerId": "H",
+            "orderDate": "2026-03-01T10:15:00Z",
+            "sku": "A",
+            "quantity": 1,
+            "unitPrice": {
+              "cents": 100,
+              "currency": "NZD"
+            },
+            "discountPercent": 0,
+            "notes": ""
+          },
+          {
+            "orderId": "h2",
+            "customerId": "H",
+            "orderDate": "2026-03-01T10:14:59Z",
+            "sku": "A",
+            "quantity": 1,
+            "unitPrice": {
+              "cents": 100,
+              "currency": "NZD"
+            },
+            "discountPercent": 0,
+            "notes": ""
+          }
+        ],
+        {
+          "groupBy": [
+            "day"
+          ],
+          "timeZone": "Pacific/Chatham"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "currency": "NZD",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "currency": "NZD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "NZD",
+              "cents": 200
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-agg-round-per-record",
+      "description": "Each record rounds on its own, per currency",
+      "call": "aggregate",
+      "args": [
+        [
+          {
+            "orderId": "r1",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "R",
+            "quantity": 1,
+            "unitPrice": {
+              "cents": 99,
+              "currency": "EUR"
+            },
+            "discountPercent": 50,
+            "notes": ""
+          },
+          {
+            "orderId": "r2",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "R",
+            "quantity": 1,
+            "unitPrice": {
+              "cents": 99,
+              "currency": "EUR"
+            },
+            "discountPercent": 50,
+            "notes": ""
+          },
+          {
+            "orderId": "r3",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "R",
+            "quantity": 1,
+            "unitPrice": {
+              "cents": 99,
+              "currency": "USD"
+            },
+            "discountPercent": 50,
+            "notes": ""
+          }
+        ],
+        {
+          "groupBy": [
+            "sku"
+          ]
+        }
+      ],
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "R"
+              ],
+              "currency": "EUR",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "R"
+              ],
+              "currency": "USD",
+              "revenueCents": 50
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 100
+            },
+            {
+              "currency": "USD",
+              "cents": 50
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-agg-no-dedup",
+      "description": "aggregate sums every record it is given",
+      "call": "aggregate",
+      "args": [
+        [
+          {
+            "orderId": "d",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "D",
+            "quantity": 1,
+            "unitPrice": {
+              "cents": 100,
+              "currency": "GBP"
+            },
+            "discountPercent": 0,
+            "notes": ""
+          },
+          {
+            "orderId": "d",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "D",
+            "quantity": 1,
+            "unitPrice": {
+              "cents": 100,
+              "currency": "GBP"
+            },
+            "discountPercent": 0,
+            "notes": ""
+          }
+        ],
+        {
+          "groupBy": [
+            "customer"
+          ]
+        }
+      ],
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "customer"
+          ],
+          "rows": [
+            {
+              "key": [
+                "C1"
+              ],
+              "currency": "GBP",
+              "revenueCents": 200
+            }
+          ],
+          "totals": [
+            {
+              "currency": "GBP",
+              "cents": 200
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-agg-no-mutation",
+      "description": "Records and spec stay as given",
+      "call": "aggregate",
+      "args": [
+        [
+          {
+            "orderId": "u1",
+            "customerId": "C2",
+            "orderDate": "2026-03-02T01:00:00+09:00",
+            "sku": "B",
+            "quantity": 1,
+            "unitPrice": {
+              "cents": 100,
+              "currency": "JPY"
+            },
+            "discountPercent": 0,
+            "notes": ""
+          },
+          {
+            "orderId": "u2",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "A",
+            "quantity": 1,
+            "unitPrice": {
+              "cents": 200,
+              "currency": "CHF"
+            },
+            "discountPercent": 0,
+            "notes": ""
+          }
+        ],
+        {
+          "groupBy": [
+            "day",
+            "customer"
+          ],
+          "timeZone": "UTC"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day",
+            "customer"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01",
+                "C1"
+              ],
+              "currency": "CHF",
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "2026-03-01",
+                "C2"
+              ],
+              "currency": "JPY",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "CHF",
+              "cents": 200
+            },
+            {
+              "currency": "JPY",
+              "cents": 100
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6-api-agg-type-zone",
+      "description": "timeZone that is not a string",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "timeZone": 9
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders6.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s6-api-agg-type-unknown-zone",
+      "description": "Unknown time zone",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "timeZone": "Mars/Olympus"
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders6.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s6-api-render-text",
+      "description": "render text with several currencies",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "customer"
+          ],
+          "rows": [
+            {
+              "key": [
+                "C1"
+              ],
+              "currency": "EUR",
+              "revenueCents": 500
+            },
+            {
+              "key": [
+                "C1"
+              ],
+              "currency": "USD",
+              "revenueCents": 2630
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "EUR",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "JPY",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "USD",
+              "revenueCents": 300
+            },
+            {
+              "key": [
+                "C3"
+              ],
+              "currency": "EUR",
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "C3"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "C4"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 800
+            },
+            {
+              "currency": "JPY",
+              "cents": 400
+            },
+            {
+              "currency": "USD",
+              "cents": 3130
+            }
+          ]
+        },
+        "text"
+      ],
+      "expect": {
+        "returns": "customer\trevenue\nC1\t5.00 EUR\nC1\t26.30\nC2\t1.00 EUR\nC2\t4.00 JPY\nC2\t3.00\nC3\t2.00 EUR\nC3\t1.00\nC4\t1.00\nTOTAL\t8.00 EUR\nTOTAL\t4.00 JPY\nTOTAL\t31.30\n"
+      }
+    },
+    {
+      "id": "s6-api-render-markdown",
+      "description": "render markdown with several currencies",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "customer"
+          ],
+          "rows": [
+            {
+              "key": [
+                "C1"
+              ],
+              "currency": "EUR",
+              "revenueCents": 500
+            },
+            {
+              "key": [
+                "C1"
+              ],
+              "currency": "USD",
+              "revenueCents": 2630
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "EUR",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "JPY",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "USD",
+              "revenueCents": 300
+            },
+            {
+              "key": [
+                "C3"
+              ],
+              "currency": "EUR",
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "C3"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "C4"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 800
+            },
+            {
+              "currency": "JPY",
+              "cents": 400
+            },
+            {
+              "currency": "USD",
+              "cents": 3130
+            }
+          ]
+        },
+        "markdown"
+      ],
+      "expect": {
+        "returns": "| customer | revenue |\n|---|---:|\n| C1 | 5.00 EUR |\n| C1 | 26.30 |\n| C2 | 1.00 EUR |\n| C2 | 4.00 JPY |\n| C2 | 3.00 |\n| C3 | 2.00 EUR |\n| C3 | 1.00 |\n| C4 | 1.00 |\n| TOTAL | 8.00 EUR |\n| TOTAL | 4.00 JPY |\n| TOTAL | 31.30 |\n"
+      }
+    },
+    {
+      "id": "s6-api-render-html",
+      "description": "render html with several currencies",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "customer"
+          ],
+          "rows": [
+            {
+              "key": [
+                "C1"
+              ],
+              "currency": "EUR",
+              "revenueCents": 500
+            },
+            {
+              "key": [
+                "C1"
+              ],
+              "currency": "USD",
+              "revenueCents": 2630
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "EUR",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "JPY",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "USD",
+              "revenueCents": 300
+            },
+            {
+              "key": [
+                "C3"
+              ],
+              "currency": "EUR",
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "C3"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "C4"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 800
+            },
+            {
+              "currency": "JPY",
+              "cents": 400
+            },
+            {
+              "currency": "USD",
+              "cents": 3130
+            }
+          ]
+        },
+        "html"
+      ],
+      "expect": {
+        "returns": "<table>\n<thead>\n<tr><th>customer</th><th>revenue</th></tr>\n</thead>\n<tbody>\n<tr><td>C1</td><td>5.00 EUR</td></tr>\n<tr><td>C1</td><td>26.30</td></tr>\n<tr><td>C2</td><td>1.00 EUR</td></tr>\n<tr><td>C2</td><td>4.00 JPY</td></tr>\n<tr><td>C2</td><td>3.00</td></tr>\n<tr><td>C3</td><td>2.00 EUR</td></tr>\n<tr><td>C3</td><td>1.00</td></tr>\n<tr><td>C4</td><td>1.00</td></tr>\n</tbody>\n<tfoot>\n<tr><td>TOTAL</td><td>8.00 EUR</td></tr>\n<tr><td>TOTAL</td><td>4.00 JPY</td></tr>\n<tr><td>TOTAL</td><td>31.30</td></tr>\n</tfoot>\n</table>\n"
+      }
+    },
+    {
+      "id": "s6-api-render-json",
+      "description": "render json with several currencies",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "customer"
+          ],
+          "rows": [
+            {
+              "key": [
+                "C1"
+              ],
+              "currency": "EUR",
+              "revenueCents": 500
+            },
+            {
+              "key": [
+                "C1"
+              ],
+              "currency": "USD",
+              "revenueCents": 2630
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "EUR",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "JPY",
+              "revenueCents": 400
+            },
+            {
+              "key": [
+                "C2"
+              ],
+              "currency": "USD",
+              "revenueCents": 300
+            },
+            {
+              "key": [
+                "C3"
+              ],
+              "currency": "EUR",
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "C3"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "C4"
+              ],
+              "currency": "USD",
+              "revenueCents": 100
+            }
+          ],
+          "totals": [
+            {
+              "currency": "EUR",
+              "cents": 800
+            },
+            {
+              "currency": "JPY",
+              "cents": 400
+            },
+            {
+              "currency": "USD",
+              "cents": 3130
+            }
+          ]
+        },
+        "json"
+      ],
+      "expect": {
+        "returns": "{\"groupBy\":[\"customer\"],\"rows\":[{\"key\":[\"C1\"],\"currency\":\"EUR\",\"revenue\":\"5.00\"},{\"key\":[\"C1\"],\"currency\":\"USD\",\"revenue\":\"26.30\"},{\"key\":[\"C2\"],\"currency\":\"EUR\",\"revenue\":\"1.00\"},{\"key\":[\"C2\"],\"currency\":\"JPY\",\"revenue\":\"4.00\"},{\"key\":[\"C2\"],\"currency\":\"USD\",\"revenue\":\"3.00\"},{\"key\":[\"C3\"],\"currency\":\"EUR\",\"revenue\":\"2.00\"},{\"key\":[\"C3\"],\"currency\":\"USD\",\"revenue\":\"1.00\"},{\"key\":[\"C4\"],\"currency\":\"USD\",\"revenue\":\"1.00\"}],\"totals\":[{\"currency\":\"EUR\",\"total\":\"8.00\"},{\"currency\":\"JPY\",\"total\":\"4.00\"},{\"currency\":\"USD\",\"total\":\"31.30\"}]}\n"
+      }
+    },
+    {
+      "id": "s6-api-render-empty-text",
+      "description": "render with no rows",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [],
+          "totals": []
+        },
+        "text"
+      ],
+      "expect": {
+        "returns": "day\trevenue\nTOTAL\t0.00\n"
+      }
+    },
+    {
+      "id": "s6-api-render-empty-json",
+      "description": "render JSON with no rows",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [],
+          "totals": []
+        },
+        "json"
+      ],
+      "expect": {
+        "returns": "{\"groupBy\":[\"day\"],\"rows\":[],\"totals\":[]}\n"
+      }
+    },
+    {
+      "id": "s6-api-pipeline-json-new-york",
+      "description": "read, aggregate in New York, render JSON",
+      "call": "pipeline",
+      "args": [
+        {
+          "path": "orders6.csv"
+        },
+        {
+          "groupBy": [
+            "day"
+          ],
+          "timeZone": "America/New_York"
+        },
+        "json"
+      ],
+      "expect": {
+        "returns": "{\"groupBy\":[\"day\"],\"rows\":[{\"key\":[\"2026-03-01\"],\"currency\":\"EUR\",\"revenue\":\"5.00\"},{\"key\":[\"2026-03-01\"],\"currency\":\"JPY\",\"revenue\":\"4.00\"},{\"key\":[\"2026-03-01\"],\"currency\":\"USD\",\"revenue\":\"23.00\"},{\"key\":[\"2026-03-02\"],\"currency\":\"EUR\",\"revenue\":\"2.00\"},{\"key\":[\"2026-03-02\"],\"currency\":\"USD\",\"revenue\":\"1.00\"},{\"key\":[\"2026-03-04\"],\"currency\":\"EUR\",\"revenue\":\"1.00\"},{\"key\":[\"2026-03-04\"],\"currency\":\"USD\",\"revenue\":\"6.30\"},{\"key\":[\"2026-03-09\"],\"currency\":\"USD\",\"revenue\":\"1.00\"}],\"totals\":[{\"currency\":\"EUR\",\"total\":\"8.00\"},{\"currency\":\"JPY\",\"total\":\"4.00\"},{\"currency\":\"USD\",\"total\":\"31.30\"}]}\n"
+      }
+    },
+    {
+      "id": "s6-api-pipeline-stage-3",
+      "description": "Stage 3 data through the new JSON shape",
+      "call": "pipeline",
+      "args": [
+        {
+          "path": "orders.csv"
+        },
+        {
+          "groupBy": [
+            "customer",
+            "day",
+            "sku"
+          ]
+        },
+        "json"
+      ],
+      "expect": {
+        "returns": "{\"groupBy\":[\"customer\",\"day\",\"sku\"],\"rows\":[{\"key\":[\"C'3\",\"2026-03-02\",\"<b>&\\\"q\\\"\"],\"currency\":\"USD\",\"revenue\":\"7.00\"},{\"key\":[\"C1\",\"2026-03-01\",\"A-1\"],\"currency\":\"USD\",\"revenue\":\"20.00\"},{\"key\":[\"C1\",\"2026-03-02\",\"A-1\"],\"currency\":\"USD\",\"revenue\":\"3.75\"},{\"key\":[\"C1\",\"2026-03-03\",\"ß\"],\"currency\":\"USD\",\"revenue\":\"10.00\"},{\"key\":[\"C1\",\"2026-03-05\",\"A\"],\"currency\":\"USD\",\"revenue\":\"1.00\"},{\"key\":[\"C2\",\"2026-03-01\",\"B|x\"],\"currency\":\"USD\",\"revenue\":\"4.95\"},{\"key\":[\"C2\",\"2026-03-03\",\"A-2\"],\"currency\":\"USD\",\"revenue\":\"0.50\"},{\"key\":[\"C2\",\"2026-03-05\",\"B|x\"],\"currency\":\"USD\",\"revenue\":\"6.00\"}],\"totals\":[{\"currency\":\"USD\",\"total\":\"53.20\"}]}\n"
+      }
+    }
+  ]
+}

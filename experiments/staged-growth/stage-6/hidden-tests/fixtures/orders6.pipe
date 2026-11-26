@@ -1,0 +1,2 @@
+order_id|customer_id|order_date|sku|quantity|unit_price|currency
+1|P1|2026-03-01T23:00:00-01:00|A|1|1.00|EUR

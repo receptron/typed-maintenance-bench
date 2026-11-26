@@ -1,0 +1,62 @@
+[
+  {
+    "order_id": "j1",
+    "customer_id": "J1",
+    "order_date": "2026-03-01T20:00:00-08:00",
+    "sku": "A",
+    "quantity": 1,
+    "unit_price": 3.5,
+    "currency": "EUR"
+  },
+  {
+    "order_id": "j2",
+    "customer_id": "J1",
+    "order_date": "2026-03-01",
+    "sku": "A",
+    "quantity": 2,
+    "unit_price": "1.00",
+    "currency": null
+  },
+  {
+    "order_id": "j3",
+    "customer_id": "J2",
+    "order_date": "2026-03-01T12:00:00Z",
+    "sku": "B",
+    "quantity": 1,
+    "unit_price": 1,
+    "currency": 978
+  },
+  {
+    "order_id": "j4",
+    "customer_id": "J2",
+    "order_date": "2026-03-01T12:00:00+00:00",
+    "sku": "B",
+    "quantity": 1,
+    "unit_price": 1,
+    "currency": "usd"
+  },
+  {
+    "order_id": "j5",
+    "customer_id": "J2",
+    "order_date": "2026-03-01T12:00:00.000Z",
+    "sku": "B",
+    "quantity": 1,
+    "unit_price": 1
+  },
+  {
+    "order_id": "j6",
+    "customer_id": "J2",
+    "order_date": "2026-03-01t12:00:00z",
+    "sku": "B",
+    "quantity": 1,
+    "unit_price": 1
+  },
+  {
+    "order_id": "j7",
+    "customer_id": "J2",
+    "order_date": "2026-03-01T12:00:00+24:00",
+    "sku": "B",
+    "quantity": 1,
+    "unit_price": 1
+  }
+]
