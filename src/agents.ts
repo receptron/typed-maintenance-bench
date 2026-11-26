@@ -20,6 +20,9 @@ export type AgentOptions = {
   timeoutMs: number;
   budgetUsd: number;
   auth: AuthMode;
+  // A different instruction and transcript name, for a session that is not the stage's own agent.
+  prompt?: string;
+  transcriptFile?: string;
 };
 
 export const AGENT_PROMPT =
@@ -32,7 +35,7 @@ const ISOLATION_FLAG: Record<AuthMode, string> = { "api-key": "--bare", subscrip
 
 export const claudeCommand = (options: AgentOptions): string[] => [
   "claude",
-  AGENT_PROMPT,
+  options.prompt ?? AGENT_PROMPT,
   ISOLATION_FLAG[options.auth],
   "--print",
   "--output-format",
@@ -59,6 +62,6 @@ const runReference = async (options: AgentOptions): Promise<ExecResult> => {
 
 export const runAgent = (agent: AgentId, options: AgentOptions): Promise<ExecResult> => {
   if (agent === "reference") return runReference(options);
-  const stdoutFile = path.join(options.logDir, TRANSCRIPT_FILE);
+  const stdoutFile = path.join(options.logDir, options.transcriptFile ?? TRANSCRIPT_FILE);
   return execute(claudeCommand(options), { cwd: options.tree, timeoutMs: options.timeoutMs, stdoutFile });
 };

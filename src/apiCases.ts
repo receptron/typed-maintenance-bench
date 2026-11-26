@@ -1,17 +1,21 @@
 // Shipped into the agent's tree with the API runner, so this file may import only Node built-ins.
 import { isRecord, isStringList, type Verdict } from "./cases.js";
 
-export const API_CALLS = ["read", "aggregate", "render", "pipeline"] as const;
+export const API_CALLS = ["read", "aggregate", "render", "pipeline", "registerFormat"] as const;
 export type ApiCall = (typeof API_CALLS)[number];
 export const ERROR_KINDS = ["TypeError", "ReadError"] as const;
 export type ErrorKind = (typeof ERROR_KINDS)[number];
 
 export type ApiExpectation = { returns: unknown } | { throws: ErrorKind };
 
+// A call made before the one under test. It must throw exactly when `throws` is true; otherwise the case crashes.
+export type ApiStep = { call: ApiCall; args: unknown[]; throws?: boolean };
+
 export type ApiCase = {
   id: string;
   description: string;
   env?: Record<string, string>;
+  setup?: ApiStep[];
   call: ApiCall;
   args: unknown[];
   recordsFrom?: unknown;
@@ -26,12 +30,22 @@ export type ApiObservation =
 // Stands for any string in an expected value, for free-text fields such as warning reasons.
 export const ANY_STRING = "$anyString";
 export const UNDEFINED_MARKER = "$undefined";
+// Stands for a plugin parse function the worker builds, since a case file cannot hold a function.
+export const PLUGIN_MARKER = "$plugin";
 
 const isApiCall = (value: unknown): value is ApiCall => API_CALLS.some((call) => call === value);
 const isErrorKind = (value: unknown): value is ErrorKind => ERROR_KINDS.some((kind) => kind === value);
 
 export const isApiExpectation = (value: unknown): value is ApiExpectation =>
   isRecord(value) && ("returns" in value || isErrorKind(value.throws));
+
+const isStep = (value: unknown): value is ApiStep =>
+  isRecord(value) &&
+  isApiCall(value.call) &&
+  Array.isArray(value.args) &&
+  (value.throws === undefined || typeof value.throws === "boolean");
+
+const isSetup = (value: unknown): boolean => value === undefined || (Array.isArray(value) && value.every(isStep));
 
 const isEnv = (value: unknown): boolean =>
   value === undefined || (isRecord(value) && isStringList(Object.values(value)));
@@ -41,6 +55,7 @@ export const isApiCase = (value: unknown): value is ApiCase =>
   typeof value.id === "string" &&
   typeof value.description === "string" &&
   isEnv(value.env) &&
+  isSetup(value.setup) &&
   isApiCall(value.call) &&
   Array.isArray(value.args) &&
   isApiExpectation(value.expect);

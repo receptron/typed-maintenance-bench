@@ -67,6 +67,7 @@ describe("isApiCase", () => {
   it("accepts a well-formed case and rejects malformed ones", () => {
     const good = { id: "a", description: "", call: "render", args: [], expect: { returns: "" } };
     assert.ok(isApiCase(good));
+    assert.ok(isApiCase({ ...good, call: "registerFormat", setup: [{ call: "read", args: [], throws: true }] }));
     [
       { ...good, call: "write" },
       { ...good, args: {} },
@@ -74,6 +75,9 @@ describe("isApiCase", () => {
       { ...good, expect: {} },
       { ...good, env: { TZ: 1 } },
       { ...good, id: 1 },
+      { ...good, setup: {} },
+      { ...good, setup: [{ call: "write", args: [] }] },
+      { ...good, setup: [{ call: "read", args: [], throws: "yes" }] },
     ].forEach((bad) => assert.ok(!isApiCase(bad), JSON.stringify(bad)));
   });
 });

@@ -10,4 +10,7 @@ export const RUNNER_BUILD_DIR = path.join(REPO_ROOT, "dist", "src");
 
 export const stageDir = (stage: number): string => path.join(EXPERIMENT_DIR, `stage-${stage}`);
 export const templateDir = (template: string): string => path.join(EXPERIMENT_DIR, "templates", template);
-export const referenceDir = (stage: number): string => path.join(EXPERIMENT_DIR, "reference", `stage-${stage}`);
+// Stage 7 fixes bugs seeded into the stage 6 reference, so its reference is stage 6's.
+const REFERENCE_STAGE: Record<number, number> = { 7: 6 };
+export const referenceDir = (stage: number): string =>
+  path.join(EXPERIMENT_DIR, "reference", `stage-${REFERENCE_STAGE[stage] ?? stage}`);

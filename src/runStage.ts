@@ -7,7 +7,8 @@ import { countTreeEscapes, type EscapeCounts } from "./escapes.js";
 import { gradeTree, type Grade } from "./grade.js";
 import { collectProvenance } from "./meta.js";
 import { EXPERIMENT } from "./paths.js";
-import { copyTree, prepareTree, writeDiffSinceStart, type Mode } from "./tree.js";
+import { SEED_STAGE, seedBugs } from "./seed.js";
+import { commitStart, copyTree, prepareTree, writeDiffSinceStart, type Mode } from "./tree.js";
 
 export type StageRun = {
   arm: Arm;
@@ -34,10 +35,12 @@ const claimOutputDir = (run: StageRun): string => {
   return outDir;
 };
 
-const prepare = async (run: StageRun): Promise<string> => {
+const prepare = async (run: StageRun, outDir: string): Promise<string> => {
   const tree = mkdtempSync(path.join(os.tmpdir(), `tmb-${run.arm.id}-${run.mode}-stage-${run.stage}-`));
   const previousTree = run.stage > 1 ? path.join(runDir(run, run.stage - 1), "tree") : null;
   await prepareTree({ arm: run.arm, stage: run.stage, mode: run.mode, previousTree, tree });
+  if (run.stage === SEED_STAGE) await seedBugs(run, tree, outDir);
+  await commitStart(tree);
   return tree;
 };
 
@@ -78,7 +81,7 @@ const recordOutcome = async (run: StageRun, tree: string, outDir: string): Promi
 
 export const runStage = async (run: StageRun): Promise<StageResult> => {
   const outDir = claimOutputDir(run);
-  const tree = await prepare(run);
+  const tree = await prepare(run, outDir);
   const outcome = await executeAgent(run, tree, outDir);
   const result = await recordOutcome(run, tree, outDir);
   const provenance = await collectProvenance(run.agent === "claude" ? ["claude", "--version"] : null);
