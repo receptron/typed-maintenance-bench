@@ -8,6 +8,7 @@ yarn test               # unit tests for the pure parts
 yarn bench --arm ts --mode cumulative --repeat r1 [--stages 1-2] [--agent claude|reference] [--auth api-key|subscription] [--model <id>]
 yarn grade --tree results/.../stage-2/tree --arm ts --stage 2   # recompute a grade from a saved tree
 yarn escapes <dir>      # count escape hatches in a tree
+yarn summarize [--repeats r2,r3,r4]   # one table row per arm, mode and stage, from results/
 ```
 
 `yarn bench` with the default `claude` agent runs Claude Code with `--bare`, so the host's CLAUDE.md, hooks, plugins and memory do not leak into a run. In that mode Claude Code authenticates only with `ANTHROPIC_API_KEY`. To run on a logged-in Claude subscription instead, pass `--auth subscription` with `ANTHROPIC_API_KEY` unset: the agent then runs with `--safe-mode`, which skips the same host configuration.
@@ -21,6 +22,7 @@ yarn escapes <dir>      # count escape hatches in a tree
 | `grade.ts` | Build, verify, then run the hidden cases of this stage and every earlier stage on a copy of the fixtures |
 | `escapes.ts` | Count `any`, `as`, `<T>x`, `!`, `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck`, `eslint-disable` with the TypeScript parser |
 | `runStage.ts`, `runCli.ts` | One stage end to end, writing `results/<experiment>/<arm>/<mode>/<repeat>/stage-<n>/` |
+| `summary.ts`, `summarizeCli.ts` | Read `results/` and print the table that reports quote |
 | `gradeCli.ts`, `escapesCli.ts`, `checkReference.ts` | The commands above |
 
 Each run directory holds `meta.json` (settings, timings, harness commit, agent version), `agent.jsonl` (the transcript), `agent.stderr.log`, `diff.patch` (everything the agent changed), `grade.json`, `escapes.json` and `tree/` (the final tree without `node_modules`).

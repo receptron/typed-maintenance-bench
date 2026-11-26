@@ -64,7 +64,7 @@ Each arm runs in two modes: **cumulative** (each stage builds on that arm's own 
 
 ### Status
 
-Stages 1–2 are runnable for the pilot arms (`js`, `ts`, `ts-noany`), in both modes. The harness passes its self-test (the reference implementation passes every hidden case in every arm and mode). A pilot with Claude Code (arms `js`, `ts`, `ts-noany`, cumulative, stages 1–2) has been run; the raw outputs are in [results/](results/README.md), and no report has been written yet.
+Stages 1–2 are runnable for the pilot arms (`js`, `ts`, `ts-noany`), in both modes. The harness passes its self-test (the reference implementation passes every hidden case in every arm and mode). A pilot with Claude Code (arms `js`, `ts`, `ts-noany`, cumulative, stages 1–2) has been run; the raw outputs are in [results/](results/README.md) and the first report is [reports/2026-11-26-pilot-stages-1-2.md](reports/2026-11-26-pilot-stages-1-2.md). Stages 1–2 turned out too easy to separate the arms on correctness, so stages 3–4 are next.
 
 ### Reproducing
 
@@ -139,7 +139,7 @@ Evil Martians は、[型のエラーを直す時間はコーディングエー�
 
 ### 現状
 
-段階 1〜2 を、小さく試す組（`js`、`ts`、`ts-noany`）で、2 つの進め方の両方で走らせられます。ハーネスは自己確認に通っています（参照実装が、全組・全進め方で、隠したテストにすべて通る）。Claude Code での小さな試し走り（`js`、`ts`、`ts-noany`、積み上げ、段階 1〜2）を走らせました。生の出力は [results/](results/README.md) にあり、レポートはまだ書いていません。
+段階 1〜2 を、小さく試す組（`js`、`ts`、`ts-noany`）で、2 つの進め方の両方で走らせられます。ハーネスは自己確認に通っています（参照実装が、全組・全進め方で、隠したテストにすべて通る）。Claude Code での小さな試し走り（`js`、`ts`、`ts-noany`、積み上げ、段階 1〜2）を走らせました。生の出力は [results/](results/README.md) に、最初のレポートは [reports/2026-11-26-pilot-stages-1-2.md](reports/2026-11-26-pilot-stages-1-2.md) にあります。段階 1〜2 は易しすぎて、正しさでは組の差が出なかったので、次は段階 3〜4 を作ります。
 
 ### 再現する
 
