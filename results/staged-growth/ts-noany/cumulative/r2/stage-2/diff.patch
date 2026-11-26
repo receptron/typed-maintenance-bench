@@ -1,0 +1,584 @@
+diff --git a/package.json b/package.json
+index 54997fa..5fbf5bb 100644
+--- a/package.json
++++ b/package.json
+@@ -12,5 +12,9 @@
+     "eslint": "10.15.0",
+     "typescript": "6.0.3",
+     "typescript-eslint": "8.74.0"
++  },
++  "dependencies": {
++    "fflate": "^0.8.3",
++    "yaml": "^2.9.1"
+   }
+ }
+diff --git a/src/cli.ts b/src/cli.ts
+index b596ea7..122a1f2 100644
+--- a/src/cli.ts
++++ b/src/cli.ts
+@@ -1,6 +1,8 @@
+ import { readFileSync } from "node:fs";
+-
+-class Fatal extends Error {}
++import { extname } from "node:path";
++import { parseDocument } from "yaml";
++import { loadXlsx } from "./xlsx.js";
++import { Fatal, type Rec, type Val, recFromObject, trimBlank } from "./values.js";
+ 
+ interface RawRecord {
+   line: number;
+@@ -8,10 +10,6 @@ interface RawRecord {
+   error: string | null;
+ }
+ 
+-function trimBlank(s: string): string {
+-  return s.replace(/^[ \t]+/, "").replace(/[ \t]+$/, "");
+-}
+-
+ function parseCsv(text: string): RawRecord[] {
+   const records: RawRecord[] = [];
+   const n = text.length;
+@@ -127,16 +125,34 @@ function fmt(c: bigint): string {
+   return `${s.slice(0, -2)}.${s.slice(-2)}`;
+ }
+ 
+-function parseArgs(argv: string[]): { input: string; groupBy: "day" | "sku" | "customer" } {
++type Format = "csv" | "json" | "jsonl" | "yaml" | "xlsx";
++
++function toFormat(s: string): Format | null {
++  return s === "csv" || s === "json" || s === "jsonl" || s === "yaml" || s === "xlsx" ? s : null;
++}
++
++const EXTENSIONS: Record<string, Format> = {
++  ".csv": "csv",
++  ".json": "json",
++  ".jsonl": "jsonl",
++  ".ndjson": "jsonl",
++  ".yaml": "yaml",
++  ".yml": "yaml",
++  ".xlsx": "xlsx",
++};
++
++function parseArgs(argv: string[]): { input: string; groupBy: "day" | "sku" | "customer"; format: Format } {
+   let input: string | undefined;
+   let groupBy: string | undefined;
++  let formatArg: string | undefined;
+   for (let k = 0; k < argv.length; k++) {
+     const a = argv[k];
+-    if (a === "--input" || a === "--group-by") {
++    if (a === "--input" || a === "--group-by" || a === "--format") {
+       const v = argv[k + 1];
+       if (v === undefined) throw new Fatal(`missing value for ${a}`);
+       if (a === "--input") input = v;
+-      else groupBy = v;
++      else if (a === "--group-by") groupBy = v;
++      else formatArg = v;
+       k++;
+     } else {
+       throw new Fatal(`unknown option: ${a}`);
+@@ -147,18 +163,28 @@ function parseArgs(argv: string[]): { input: string; groupBy: "day" | "sku" | "c
+   if (groupBy !== "day" && groupBy !== "sku" && groupBy !== "customer") {
+     throw new Fatal(`invalid --group-by value: ${groupBy}`);
+   }
+-  return { input, groupBy };
++  let format: Format | null;
++  if (formatArg !== undefined) {
++    format = toFormat(formatArg);
++    if (format === null) throw new Fatal(`invalid --format value: ${formatArg}`);
++  } else {
++    const ext = extname(input).toLowerCase();
++    format = Object.hasOwn(EXTENSIONS, ext) ? (EXTENSIONS[ext] ?? null) : null;
++    if (format === null) throw new Fatal(`cannot determine format of ${input}`);
++  }
++  return { input, groupBy, format };
+ }
+ 
+-function run(): { out: string; err: string } {
+-  const { input, groupBy } = parseArgs(process.argv.slice(2));
+-  let text: string;
++function decodeUtf8(bytes: Uint8Array): string {
+   try {
+-    text = readFileSync(input).toString("utf8");
+-  } catch (e) {
+-    throw new Fatal(`cannot read ${input}`);
++    const text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
++    return text.startsWith("\uFEFF") ? text.slice(1) : text;
++  } catch {
++    throw new Fatal("input is not valid UTF-8");
+   }
+-  if (text.startsWith("﻿")) text = text.slice(1);
++}
++
++function loadCsv(text: string): Rec[] {
+   const records = parseCsv(text);
+   const header = records[0];
+   if (header === undefined) throw new Fatal("no header line");
+@@ -170,46 +196,116 @@ function run(): { out: string; err: string } {
+   for (const name of need) {
+     if (!col.has(name)) throw new Fatal(`header missing column: ${name}`);
+   }
+-  const get = (f: string[], name: string): string => {
+-    const idx = col.get(name);
+-    return idx === undefined ? "" : (f[idx] ?? "");
+-  };
++  return records.slice(1).map((rec) => ({
++    loc: String(rec.line),
++    error: rec.error ?? (rec.fields.length < header.fields.length ? "too few fields" : null),
++    get: (name): Val => {
++      const idx = col.get(name);
++      return { k: "text", s: idx === undefined ? "" : (rec.fields[idx] ?? "") };
++    },
++  }));
++}
++
++function loadJson(text: string): Rec[] {
++  let v: unknown;
++  try {
++    v = JSON.parse(text);
++  } catch {
++    throw new Fatal("invalid JSON");
++  }
++  if (!Array.isArray(v)) throw new Fatal("top-level JSON value is not an array");
++  return v.map((el: unknown, i) => recFromObject(`#${i + 1}`, el));
++}
++
++function loadJsonl(text: string): Rec[] {
++  const recs: Rec[] = [];
++  text.split("\n").forEach((line, i) => {
++    if (/^[ \t\r]*$/.test(line)) return;
++    let v: unknown;
++    try {
++      v = JSON.parse(line);
++    } catch {
++      v = undefined;
++    }
++    recs.push(recFromObject(String(i + 1), v));
++  });
++  return recs;
++}
++
++function loadYaml(text: string): Rec[] {
++  let v: unknown;
++  try {
++    const doc = parseDocument(text, { customTags: ["timestamp"] });
++    if (doc.errors.length > 0) throw new Fatal("invalid YAML");
++    v = doc.toJS();
++  } catch {
++    throw new Fatal("invalid YAML");
++  }
++  if (!Array.isArray(v)) throw new Fatal("top-level YAML value is not a sequence");
++  return v.map((el: unknown, i) => recFromObject(`#${i + 1}`, el));
++}
++
++function asText(v: Val): string | null {
++  return v.k === "empty" ? "" : v.k === "text" || v.k === "num" ? v.s : null;
++}
++
++function asDate(v: Val): string | null {
++  return v.k === "num" ? (v.date ?? v.s) : v.k === "date" ? v.s : asText(v);
++}
++
++function run(): { out: string; err: string } {
++  const { input, groupBy, format } = parseArgs(process.argv.slice(2));
++  let bytes: Uint8Array;
++  try {
++    bytes = readFileSync(input);
++  } catch (e) {
++    throw new Fatal(`cannot read ${input}`);
++  }
++  let records: Rec[];
++  if (format === "xlsx") records = loadXlsx(bytes).recs;
++  else {
++    const text = decodeUtf8(bytes);
++    if (format === "csv") records = loadCsv(text);
++    else if (format === "json") records = loadJson(text);
++    else if (format === "jsonl") records = loadJsonl(text);
++    else records = loadYaml(text);
++  }
+ 
+   const seen = new Set<string>();
+   const totals = new Map<string, bigint>();
+   let err = "";
+   let total = 0n;
+-  for (const rec of records.slice(1)) {
+-    const f = rec.fields;
++  for (const rec of records) {
+     const fail = (reason: string): void => {
+-      err += `${input}:${rec.line}: ${reason}\n`;
++      err += `${input}:${rec.loc}: ${reason}\n`;
+     };
+     if (rec.error !== null) {
+       fail(rec.error);
+       continue;
+     }
+-    if (f.length < header.fields.length) {
+-      fail("too few fields");
+-      continue;
+-    }
+-    const orderId = get(f, "order_id");
+-    const customer = get(f, "customer_id");
+-    const date = get(f, "order_date");
+-    const sku = get(f, "sku");
+-    const qty = get(f, "quantity");
+-    const price = get(f, "unit_price");
+-    const disc = get(f, "discount");
++    const orderId = asText(rec.get("order_id"));
++    if (orderId === null) { fail("invalid order_id"); continue; }
+     if (orderId === "") { fail("empty order_id"); continue; }
++    const customer = asText(rec.get("customer_id"));
++    if (customer === null) { fail("invalid customer_id"); continue; }
+     if (customer === "") { fail("empty customer_id"); continue; }
+-    if (!isRealDate(date)) { fail("invalid order_date"); continue; }
++    const date = asDate(rec.get("order_date"));
++    if (date === null || !isRealDate(date)) { fail("invalid order_date"); continue; }
++    const sku = asText(rec.get("sku"));
++    if (sku === null) { fail("invalid sku"); continue; }
+     if (sku === "") { fail("empty sku"); continue; }
+-    if (!/^[0-9]+$/.test(qty) || BigInt(qty) < 1n) { fail("invalid quantity"); continue; }
+-    if (!/^[0-9]+(\.[0-9]{1,2})?$/.test(price)) { fail("invalid unit_price"); continue; }
++    const qty = asText(rec.get("quantity"));
++    if (qty === null || !/^[0-9]+$/.test(qty) || BigInt(qty) < 1n) { fail("invalid quantity"); continue; }
++    const price = asText(rec.get("unit_price"));
++    if (price === null || !/^[0-9]+(\.[0-9]{1,2})?$/.test(price)) { fail("invalid unit_price"); continue; }
++    const disc = asText(rec.get("discount"));
+     let discPct = 0n;
++    if (disc === null) { fail("invalid discount"); continue; }
+     if (disc !== "") {
+       if (!/^[01](\.[0-9]{1,2})?$/.test(disc) || cents(disc) > 100n) { fail("invalid discount"); continue; }
+       discPct = cents(disc);
+     }
++    if (asText(rec.get("notes")) === null) { fail("invalid notes"); continue; }
+     const key = JSON.stringify([orderId, sku]);
+     if (seen.has(key)) { fail("duplicate order_id and sku"); continue; }
+     seen.add(key);
+diff --git a/src/values.ts b/src/values.ts
+new file mode 100644
+index 0000000..f5db384
+--- /dev/null
++++ b/src/values.ts
+@@ -0,0 +1,81 @@
++export class Fatal extends Error {}
++
++export type Val =
++  | { k: "empty" }
++  | { k: "text"; s: string }
++  | { k: "num"; s: string; date: string | null }
++  | { k: "date"; s: string }
++  | { k: "bad" };
++
++export interface Rec {
++  loc: string;
++  error: string | null;
++  get: (name: string) => Val;
++}
++
++export const EMPTY: Val = { k: "empty" };
++export const BAD: Val = { k: "bad" };
++
++export function trimBlank(s: string): string {
++  return s.replace(/^[ \t]+/, "").replace(/[ \t]+$/, "");
++}
++
++export function isRecord(v: unknown): v is Record<string, unknown> {
++  return typeof v === "object" && v !== null && !Array.isArray(v);
++}
++
++/** Shortest decimal form of a finite number, never in exponent notation. */
++export function numStr(n: number): string | null {
++  if (!Number.isFinite(n)) return null;
++  const s = String(n);
++  const ei = s.indexOf("e");
++  if (ei < 0) return s;
++  let mant = s.slice(0, ei);
++  const exp = Number(s.slice(ei + 1));
++  let sign = "";
++  if (mant.startsWith("-")) {
++    sign = "-";
++    mant = mant.slice(1);
++  }
++  const dot = mant.indexOf(".");
++  const digits = mant.replace(".", "");
++  const point = (dot < 0 ? mant.length : dot) + exp;
++  let out: string;
++  if (point <= 0) out = `0.${"0".repeat(-point)}${digits}`;
++  else if (point >= digits.length) out = digits + "0".repeat(point - digits.length);
++  else out = `${digits.slice(0, point)}.${digits.slice(point)}`;
++  return sign + out;
++}
++
++export function dateFromUtc(ms: number): string | null {
++  const d = new Date(ms);
++  if (Number.isNaN(d.getTime())) return null;
++  const y = d.getUTCFullYear();
++  if (y < 0 || y > 9999) return null;
++  const p = (n: number, w: number): string => String(n).padStart(w, "0");
++  return `${p(y, 4)}-${p(d.getUTCMonth() + 1, 2)}-${p(d.getUTCDate(), 2)}`;
++}
++
++/** Converts a parsed JSON/YAML value into a Val. */
++export function fromParsed(v: unknown): Val {
++  if (v === undefined || v === null) return EMPTY;
++  if (typeof v === "string") return { k: "text", s: trimBlank(v) };
++  if (typeof v === "number") {
++    const s = numStr(v);
++    return s === null ? BAD : { k: "num", s, date: null };
++  }
++  if (v instanceof Date) {
++    const s = dateFromUtc(v.getTime());
++    return s === null ? BAD : { k: "date", s };
++  }
++  return BAD;
++}
++
++export function recFromObject(loc: string, v: unknown): Rec {
++  if (!isRecord(v)) return { loc, error: "invalid record", get: () => EMPTY };
++  return {
++    loc,
++    error: null,
++    get: (name) => (Object.hasOwn(v, name) ? fromParsed(v[name]) : EMPTY),
++  };
++}
+diff --git a/src/xlsx.ts b/src/xlsx.ts
+new file mode 100644
+index 0000000..90dc3a9
+--- /dev/null
++++ b/src/xlsx.ts
+@@ -0,0 +1,210 @@
++import { unzipSync } from "fflate";
++import { BAD, EMPTY, Fatal, type Rec, type Val, dateFromUtc, numStr, trimBlank } from "./values.js";
++
++function decodeEntities(s: string): string {
++  return s
++    .replace(/&(?:#x([0-9a-fA-F]+)|#([0-9]+)|(lt|gt|amp|quot|apos));/g, (m, hex, dec, name) => {
++      if (typeof name === "string") {
++        return { lt: "<", gt: ">", amp: "&", quot: '"', apos: "'" }[name] ?? m;
++      }
++      const cp = typeof hex === "string" ? parseInt(hex, 16) : Number(dec);
++      return cp >= 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : m;
++    })
++    .replace(/_x([0-9a-fA-F]{4})_/g, (_m, h: string) => String.fromCharCode(parseInt(h, 16)));
++}
++
++function attrs(s: string): Map<string, string> {
++  const out = new Map<string, string>();
++  for (const m of s.matchAll(/([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
++    const name = m[1];
++    if (name !== undefined && !out.has(name)) out.set(name, decodeEntities(m[2] ?? m[3] ?? ""));
++  }
++  return out;
++}
++
++function textOf(xml: string): string {
++  const cleaned = xml.replace(/<(?:\w+:)?rPh\b[\s\S]*?<\/(?:\w+:)?rPh>/g, "");
++  let out = "";
++  for (const m of cleaned.matchAll(/<(?:\w+:)?t\b[^>]*?(?:\/>|>([\s\S]*?)<\/(?:\w+:)?t>)/g)) {
++    out += decodeEntities(m[1] ?? "");
++  }
++  return out;
++}
++
++function sharedStrings(xml: string): string[] {
++  const out: string[] = [];
++  for (const m of xml.matchAll(/<(?:\w+:)?si\b[^>]*?(?:\/>|>([\s\S]*?)<\/(?:\w+:)?si>)/g)) {
++    out.push(textOf(m[1] ?? ""));
++  }
++  return out;
++}
++
++const BUILTIN_DATE_IDS = new Set([
++  14, 15, 16, 17, 18, 19, 20, 21, 22, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 45, 46, 47, 50, 51, 52, 53,
++  54, 55, 56, 57, 58,
++]);
++
++function isDateCode(code: string): boolean {
++  const c = code
++    .replace(/"[^"]*"/g, "")
++    .replace(/\[[^\]]*\]/g, "")
++    .replace(/\\./g, "")
++    .replace(/[_*]./g, "");
++  return /[dmyhs]/i.test(c);
++}
++
++/** For each cell style index, whether it formats numbers as dates. */
++function dateStyles(xml: string): boolean[] {
++  const custom = new Map<number, string>();
++  for (const m of xml.matchAll(/<(?:\w+:)?numFmt\b([^>]*?)\/?>/g)) {
++    const a = attrs(m[1] ?? "");
++    const id = Number(a.get("numFmtId"));
++    const code = a.get("formatCode");
++    if (Number.isInteger(id) && code !== undefined) custom.set(id, code);
++  }
++  const block = /<(?:\w+:)?cellXfs\b[^>]*>([\s\S]*?)<\/(?:\w+:)?cellXfs>/.exec(xml)?.[1] ?? "";
++  const out: boolean[] = [];
++  for (const m of block.matchAll(/<(?:\w+:)?xf\b([^>]*?)(?:\/>|>[\s\S]*?<\/(?:\w+:)?xf>)/g)) {
++    const id = Number(attrs(m[1] ?? "").get("numFmtId"));
++    const code = custom.get(id);
++    out.push(code !== undefined ? isDateCode(code) : BUILTIN_DATE_IDS.has(id));
++  }
++  return out;
++}
++
++function serialToDate(serial: number, base1904: boolean): string | null {
++  if (!Number.isFinite(serial) || serial < 0) return null;
++  const day = Math.floor(serial);
++  const DAY = 86400000;
++  if (base1904) return dateFromUtc(Date.UTC(1904, 0, 1) + day * DAY);
++  if (day === 60) return "1900-02-29";
++  const base = day < 60 ? Date.UTC(1899, 11, 31) : Date.UTC(1899, 11, 30);
++  return dateFromUtc(base + day * DAY);
++}
++
++function colIndex(ref: string): number | null {
++  const m = /^([A-Za-z]+)/.exec(ref);
++  if (m === null || m[1] === undefined) return null;
++  let n = 0;
++  for (const ch of m[1].toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64);
++  return n;
++}
++
++function resolveTarget(target: string): string {
++  if (target.startsWith("/")) return target.slice(1);
++  const parts = ["xl"];
++  for (const seg of target.split("/")) {
++    if (seg === "..") parts.pop();
++    else if (seg !== "." && seg !== "") parts.push(seg);
++  }
++  return parts.join("/");
++}
++
++export function loadXlsx(bytes: Uint8Array): { recs: Rec[] } {
++  let files: Record<string, Uint8Array>;
++  try {
++    files = unzipSync(bytes);
++  } catch {
++    throw new Fatal("cannot open workbook");
++  }
++  const read = (name: string): string | null => {
++    const f = Object.hasOwn(files, name) ? files[name] : undefined;
++    return f === undefined ? null : new TextDecoder("utf-8").decode(f);
++  };
++  const workbook = read("xl/workbook.xml");
++  if (workbook === null) throw new Fatal("cannot open workbook");
++  const rels = new Map<string, { target: string; type: string }>();
++  for (const m of (read("xl/_rels/workbook.xml.rels") ?? "").matchAll(/<(?:\w+:)?Relationship\b([^>]*?)\/?>/g)) {
++    const a = attrs(m[1] ?? "");
++    const id = a.get("Id");
++    const target = a.get("Target");
++    if (id !== undefined && target !== undefined) rels.set(id, { target, type: a.get("Type") ?? "" });
++  }
++  const sheetTag = /<(?:\w+:)?sheet\b([^>]*?)\/?>/.exec(workbook);
++  if (sheetTag === null) throw new Fatal("workbook has no worksheet");
++  let rid: string | undefined;
++  for (const [k, v] of attrs(sheetTag[1] ?? "")) if (k === "id" || k.endsWith(":id")) rid = v;
++  const rel = rid === undefined ? undefined : rels.get(rid);
++  if (rel === undefined) throw new Fatal("workbook has no worksheet");
++  const sheet = read(resolveTarget(rel.target));
++  if (sheet === null) throw new Fatal("worksheet missing");
++
++  let sstPath = "xl/sharedStrings.xml";
++  let stylesPath = "xl/styles.xml";
++  for (const r of rels.values()) {
++    if (r.type.endsWith("/sharedStrings")) sstPath = resolveTarget(r.target);
++    else if (r.type.endsWith("/styles")) stylesPath = resolveTarget(r.target);
++  }
++  const strings = sharedStrings(read(sstPath) ?? "");
++  const dateStyle = dateStyles(read(stylesPath) ?? "");
++  const wbPr = /<(?:\w+:)?workbookPr\b([^>]*?)\/?>/.exec(workbook);
++  const d1904 = wbPr === null ? "" : (attrs(wbPr[1] ?? "").get("date1904") ?? "");
++  const base1904 = d1904 === "1" || d1904.toLowerCase() === "true";
++
++  const toVal = (cellAttrs: Map<string, string>, inner: string): Val => {
++    const t = cellAttrs.get("t") ?? "n";
++    const vm = /<(?:\w+:)?v\b[^>]*?(?:\/>|>([\s\S]*?)<\/(?:\w+:)?v>)/.exec(inner);
++    const raw = vm === null ? null : decodeEntities(vm[1] ?? "");
++    const text = (s: string): Val => (s === "" ? EMPTY : { k: "text", s: trimBlank(s) });
++    if (t === "inlineStr") {
++      const im = /<(?:\w+:)?is\b[^>]*?(?:\/>|>([\s\S]*?)<\/(?:\w+:)?is>)/.exec(inner);
++      return im === null ? EMPTY : text(textOf(im[1] ?? ""));
++    }
++    if (raw === null) return EMPTY;
++    if (t === "s") {
++      const s = strings[Number(raw)];
++      return s === undefined ? BAD : text(s);
++    }
++    if (t === "str") return text(raw);
++    if (t === "b" || t === "e") return BAD;
++    if (t === "d") {
++      const m = /^\s*(\d{4}-\d{2}-\d{2})/.exec(raw);
++      return m === null || m[1] === undefined ? BAD : { k: "date", s: m[1] };
++    }
++    if (raw.trim() === "") return EMPTY;
++    const n = Number(raw);
++    const s = numStr(n);
++    if (s === null) return BAD;
++    const style = Number(cellAttrs.get("s") ?? "0");
++    return { k: "num", s, date: dateStyle[style] === true ? serialToDate(n, base1904) ?? "" : null };
++  };
++
++  const rows: { row: number; cells: Map<number, Val> }[] = [];
++  let prevRow = 0;
++  for (const rm of sheet.matchAll(/<(?:\w+:)?row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:\w+:)?row>)/g)) {
++    const ra = attrs(rm[1] ?? "");
++    const rn = Number(ra.get("r"));
++    const row = Number.isInteger(rn) && rn > 0 ? rn : prevRow + 1;
++    prevRow = row;
++    const cells = new Map<number, Val>();
++    let prevCol = 0;
++    for (const cm of (rm[2] ?? "").matchAll(/<(?:\w+:)?c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:\w+:)?c>)/g)) {
++      const ca = attrs(cm[1] ?? "");
++      const col = colIndex(ca.get("r") ?? "") ?? prevCol + 1;
++      prevCol = col;
++      const v = toVal(ca, cm[2] ?? "");
++      if (v.k !== "empty") cells.set(col, v);
++    }
++    if (cells.size > 0) rows.push({ row, cells });
++  }
++
++  const first = rows[0];
++  if (first === undefined || first.row !== 1) throw new Fatal("no header row");
++  const colOf = new Map<string, number>();
++  for (const [idx, v] of first.cells) {
++    const name = v.k === "text" || v.k === "num" ? v.s : v.k === "date" ? v.s : "";
++    if (!colOf.has(name)) colOf.set(name, idx);
++  }
++  for (const name of ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price"]) {
++    if (!colOf.has(name)) throw new Fatal(`header missing column: ${name}`);
++  }
++  const recs: Rec[] = rows.slice(1).map(({ row, cells }) => ({
++    loc: String(row),
++    error: null,
++    get: (name) => {
++      const idx = colOf.get(name);
++      return idx === undefined ? EMPTY : (cells.get(idx) ?? EMPTY);
++    },
++  }));
++  return { recs };
++}
+diff --git a/yarn.lock b/yarn.lock
+index 650c184..39af746 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -413,6 +413,11 @@ fdir@^6.5.0:
+   resolved "https://registry.yarnpkg.com/fdir/-/fdir-6.5.0.tgz#ed2ab967a331ade62f18d077dae192684d50d350"
+   integrity sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==
+ 
++fflate@^0.8.3:
++  version "0.8.3"
++  resolved "https://registry.yarnpkg.com/fflate/-/fflate-0.8.3.tgz#bc27d8eb30343d4d512abb03480202ce65d825fc"
++  integrity sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==
++
+ "file-entry-cache@11.1.5 || >11.1.6 <12":
+   version "11.1.5"
+   resolved "https://registry.yarnpkg.com/file-entry-cache/-/file-entry-cache-11.1.5.tgz#c8210eb055de63e68685ccfb6a017e386d4577d0"
+@@ -682,6 +687,11 @@ word-wrap@^1.2.5:
+   resolved "https://registry.yarnpkg.com/word-wrap/-/word-wrap-1.2.5.tgz#d2c45c6dd4fbce621a66f136cbe328afd0410b34"
+   integrity sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==
+ 
++yaml@^2.9.1:
++  version "2.9.1"
++  resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.9.1.tgz#c16233fb31944e705cfefaff38795587f57588ce"
++  integrity sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==
++
+ yocto-queue@^0.1.0:
+   version "0.1.0"
+   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"

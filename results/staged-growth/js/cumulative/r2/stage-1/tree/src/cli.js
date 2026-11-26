@@ -1,0 +1,145 @@
+import { readFileSync } from "node:fs";
+
+const fatal = (msg) => {
+  process.stderr.write(`error: ${msg}\n`);
+  process.exit(2);
+};
+
+const parseArgs = (argv) => {
+  const opts = {};
+  for (let i = 0; i < argv.length; i += 2) {
+    const name = argv[i];
+    if (name !== "--input" && name !== "--group-by") fatal(`unknown option: ${name}`);
+    if (i + 1 >= argv.length) fatal(`missing value for ${name}`);
+    opts[name] = argv[i + 1];
+  }
+  if (opts["--input"] === undefined) fatal("missing --input");
+  if (opts["--group-by"] === undefined) fatal("missing --group-by");
+  if (!["day", "sku", "customer"].includes(opts["--group-by"])) fatal(`invalid --group-by: ${opts["--group-by"]}`);
+  return { input: opts["--input"], groupBy: opts["--group-by"] };
+};
+
+// RFC 4180 parser; yields { line, fields, blank }
+const parseCsv = (text) => {
+  const records = [];
+  let i = 0;
+  let line = 1;
+  const n = text.length;
+  while (i < n) {
+    const startLine = line;
+    const fields = [];
+    let field = "";
+    let sawQuote = false;
+    let inQuotes = false;
+    let blank = true;
+    for (;;) {
+      if (i >= n) { fields.push(field); break; }
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+          inQuotes = false; i++; continue;
+        }
+        if (c === "\n") line++;
+        field += c; i++; continue;
+      }
+      if (c === '"') { inQuotes = true; sawQuote = true; blank = false; i++; continue; }
+      if (c === ",") { fields.push(field); field = ""; blank = false; i++; continue; }
+      if (c === "\n" || (c === "\r" && text[i + 1] === "\n")) {
+        i += c === "\r" ? 2 : 1; line++;
+        fields.push(field); break;
+      }
+      field += c; blank = false; i++;
+    }
+    records.push({ line: startLine, fields: fields.map((f) => f.replace(/^[ \t]+|[ \t]+$/g, "")), blank: blank && !sawQuote });
+  }
+  return records;
+};
+
+const validDate = (s) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return false;
+  const y = +m[1], mo = +m[2], d = +m[3];
+  if (mo < 1 || mo > 12 || d < 1) return false;
+  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  const dim = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
+  return d <= dim;
+};
+
+const cents = (s) => {
+  const m = /^(\d+)(?:\.(\d{1,2}))?$/.exec(s);
+  if (!m) return null;
+  return BigInt(m[1]) * 100n + BigInt((m[2] ?? "").padEnd(2, "0") || "0");
+};
+
+const cmp = (a, b) => {
+  const x = Array.from(a), y = Array.from(b);
+  for (let i = 0; i < Math.min(x.length, y.length); i++) {
+    const d = x[i].codePointAt(0) - y[i].codePointAt(0);
+    if (d !== 0) return d;
+  }
+  return x.length - y.length;
+};
+
+const main = () => {
+  const { input, groupBy } = parseArgs(process.argv.slice(2));
+  let text;
+  try {
+    text = readFileSync(input).toString("utf8");
+  } catch (e) {
+    fatal(`cannot read ${input}: ${e.message}`);
+  }
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+  const records = parseCsv(text);
+  if (records.length === 0) fatal("no header line");
+  const header = records[0].fields;
+  const required = ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price"];
+  const idx = {};
+  header.forEach((h, k) => { if (!(h in idx)) idx[h] = k; });
+  for (const r of required) if (!(r in idx)) fatal(`header missing column: ${r}`);
+
+  const seen = new Set();
+  const totals = new Map();
+  const errs = [];
+  for (const rec of records.slice(1)) {
+    if (rec.blank) continue;
+    const f = rec.fields;
+    const get = (name) => (name in idx ? f[idx[name]] : undefined);
+    const reason = (() => {
+      if (f.length < header.length) return "too few fields";
+      for (const c of ["order_id", "customer_id", "sku"]) if (get(c) === "") return `empty ${c}`;
+      if (!validDate(get("order_date"))) return "invalid order_date";
+      if (!/^\d+$/.test(get("quantity")) || /^0+$/.test(get("quantity"))) return "invalid quantity";
+      const price = cents(get("unit_price"));
+      if (price === null) return "invalid unit_price";
+      let pct = 0n;
+      const disc = get("discount") ?? "";
+      if (disc !== "") {
+        const m = /^(\d)(?:\.(\d{1,2}))?$/.exec(disc);
+        if (!m) return "invalid discount";
+        pct = BigInt(m[1]) * 100n + BigInt((m[2] ?? "").padEnd(2, "0") || "0");
+        if (pct > 100n) return "invalid discount";
+      }
+      const key = JSON.stringify([get("order_id"), get("sku")]);
+      if (seen.has(key)) return "duplicate order_id and sku";
+      seen.add(key);
+      const rev = (price * BigInt(get("quantity")) * (100n - pct) + 50n) / 100n;
+      const k = groupBy === "day" ? get("order_date") : groupBy === "sku" ? get("sku") : get("customer_id");
+      totals.set(k, (totals.get(k) ?? 0n) + rev);
+      return null;
+    })();
+    if (reason) errs.push(`${input}:${rec.line}: ${reason}\n`);
+  }
+  const fmt = (c) => `${c / 100n}.${String(c % 100n).padStart(2, "0")}`;
+  let out = `${groupBy}\trevenue\n`;
+  let total = 0n;
+  for (const k of [...totals.keys()].sort(cmp)) {
+    out += `${k}\t${fmt(totals.get(k))}\n`;
+    total += totals.get(k);
+  }
+  out += `TOTAL\t${fmt(total)}\n`;
+  process.stderr.write(errs.join(""));
+  process.stdout.write(out);
+};
+
+main();

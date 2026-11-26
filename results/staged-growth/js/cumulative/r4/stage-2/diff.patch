@@ -1,0 +1,508 @@
+diff --git a/package.json b/package.json
+index b408e8f..85d22b2 100644
+--- a/package.json
++++ b/package.json
+@@ -2,5 +2,10 @@
+   "name": "orders",
+   "version": "0.0.0",
+   "private": true,
+-  "type": "module"
++  "type": "module",
++  "dependencies": {
++    "fast-xml-parser": "^5.12.1",
++    "fflate": "^0.8.3",
++    "yaml": "^2.9.1"
++  }
+ }
+diff --git a/src/cli.js b/src/cli.js
+index a10d65b..6f8d545 100644
+--- a/src/cli.js
++++ b/src/cli.js
+@@ -1,17 +1,20 @@
+ import { readFileSync } from "node:fs";
++import { BAD, DateVal, FormatError, readJson, readJsonl, readYaml, readXlsx } from "./typed.js";
+ 
+ const fatal = (msg) => {
+   process.stderr.write(`error: ${msg}\n`);
+   process.exit(2);
+ };
+ 
++const FORMATS = new Set(["csv", "json", "jsonl", "yaml", "xlsx"]);
++const EXT = { csv: "csv", json: "json", jsonl: "jsonl", ndjson: "jsonl", yaml: "yaml", yml: "yaml", xlsx: "xlsx" };
+ const GROUPS = new Set(["day", "sku", "customer"]);
+ 
+ const parseArgs = (argv) => {
+   const opts = new Map();
+   for (let i = 0; i < argv.length; i += 2) {
+     const name = argv[i];
+-    if (name !== "--input" && name !== "--group-by") fatal(`unknown option: ${name}`);
++    if (name !== "--input" && name !== "--group-by" && name !== "--format") fatal(`unknown option: ${name}`);
+     if (i + 1 >= argv.length) fatal(`missing value for ${name}`);
+     opts.set(name, argv[i + 1]);
+   }
+@@ -21,7 +24,16 @@ const parseArgs = (argv) => {
+   const groupBy = opts.get("--group-by");
+   if (input === "") fatal("empty value for --input");
+   if (!GROUPS.has(groupBy)) fatal(`unknown --group-by value: ${groupBy}`);
+-  return { input, groupBy };
++  let format;
++  if (opts.has("--format")) {
++    format = opts.get("--format");
++    if (!FORMATS.has(format)) fatal(`unknown --format value: ${format}`);
++  } else {
++    const m = /\.([^./\\]*)$/.exec(input);
++    format = m ? EXT[m[1].toLowerCase()] : undefined;
++    if (!format) fatal(`cannot determine format of ${input}`);
++  }
++  return { input, groupBy, format };
+ };
+ 
+ // RFC 4180 parser; returns [{line, fields, blank}]
+@@ -102,53 +114,125 @@ const cmp = (a, b) => {
+ 
+ const fmt = (cents) => `${cents / 100n}.${String(cents % 100n).padStart(2, "0")}`;
+ 
++const COLS = ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price", "discount", "notes"];
++const trimWs = (s) => s.replace(/^[ \t]+|[ \t]+$/g, "");
++
++// typed value -> trimmed string, "" when empty, BAD when unusable
++const toStr = (v, allowDate) => {
++  if (v === undefined || v === null) return "";
++  if (typeof v === "string") return trimWs(v);
++  if (typeof v === "number") return Number.isFinite(v) ? String(v) : BAD;
++  if (typeof v === "bigint") return String(v);
++  if (v instanceof DateVal) return allowDate ? v.s : BAD;
++  return BAD;
++};
++
++const decode = (buf) => {
++  try {
++    return new TextDecoder("utf-8", { fatal: true }).decode(buf);
++  } catch {
++    fatal("input is not valid UTF-8");
++  }
++};
++
++// returns [{loc, fields: {col: string|BAD} | null, reason?}]
++const loadRecords = (format, buf) => {
++  if (format === "csv") {
++    const records = parseCsv(decode(buf));
++    const hi = records.findIndex((r) => !r.blank);
++    if (hi < 0) fatal("no header line");
++    const header = records[hi].fields;
++    const idx = {};
++    for (const col of COLS.slice(0, 6)) {
++      const k = header.indexOf(col);
++      if (k < 0) fatal(`header missing required column: ${col}`);
++      idx[col] = k;
++    }
++    idx.discount = header.indexOf("discount");
++    return records.slice(hi + 1).filter((r) => !r.blank).map((rec) => {
++      const f = rec.fields;
++      if (f.length < header.length) return { loc: String(rec.line), fields: null, reason: "too few fields" };
++      const fields = {};
++      for (const c of COLS.slice(0, 7)) fields[c] = idx[c] >= 0 ? f[idx[c]] : "";
++      return { loc: String(rec.line), fields };
++    });
++  }
++  let raw;
++  try {
++    if (format === "json") raw = readJson(decode(buf));
++    else if (format === "jsonl") raw = readJsonl(decode(buf));
++    else if (format === "yaml") raw = readYaml(decode(buf));
++    else {
++      const rows = readXlsx(buf);
++      const header = new Map();
++      for (const [c, v] of rows[0].cells) {
++        const s = toStr(v, false);
++        if (typeof s === "string" && s !== "" && !header.has(s)) header.set(s, c);
++      }
++      for (const col of COLS.slice(0, 6)) if (!header.has(col)) fatal(`header missing required column: ${col}`);
++      raw = rows.slice(1).map((r) => {
++        const obj = {};
++        for (const c of COLS) if (header.has(c) && r.cells.has(header.get(c))) obj[c] = r.cells.get(header.get(c));
++        return { loc: String(r.row), obj };
++      });
++    }
++  } catch (e) {
++    if (e instanceof FormatError) fatal(e.message);
++    throw e;
++  }
++  return raw.map(({ loc, obj }) => {
++    if (!obj) return { loc, fields: null, reason: "invalid record" };
++    const fields = {};
++    for (const c of COLS) fields[c] = toStr(Object.hasOwn(obj, c) ? obj[c] : undefined, c === "order_date");
++    return { loc, fields };
++  });
++};
++
+ const main = () => {
+-  const { input, groupBy } = parseArgs(process.argv.slice(2));
++  const { input, groupBy, format } = parseArgs(process.argv.slice(2));
+   let buf;
+   try {
+     buf = readFileSync(input);
+   } catch (e) {
+     fatal(`cannot read ${input}: ${e.message}`);
+   }
+-  const text = new TextDecoder("utf-8").decode(buf);
+-  const records = parseCsv(text);
+-  const hi = records.findIndex((r) => !r.blank);
+-  if (hi < 0) fatal("no header line");
+-  const header = records[hi].fields;
+-  const idx = {};
+-  for (const col of ["order_id", "customer_id", "order_date", "sku", "quantity", "unit_price"]) {
+-    const k = header.indexOf(col);
+-    if (k < 0) fatal(`header missing required column: ${col}`);
+-    idx[col] = k;
+-  }
+-  idx.discount = header.indexOf("discount");
++  const records = loadRecords(format, buf);
++  const typed = format !== "csv";
++  const locOf = (loc) => loc;
+ 
+   const totals = new Map();
+   const seen = new Set();
+   const errors = [];
+   let total = 0n;
+ 
+-  for (const rec of records.slice(hi + 1)) {
+-    if (rec.blank) continue;
++  for (const rec of records) {
++    const bad = (reason) => errors.push(`${input}:${locOf(rec.loc)}: ${reason}`);
++    if (!rec.fields) { bad(rec.reason); continue; }
+     const f = rec.fields;
+-    const bad = (reason) => errors.push(`${input}:${rec.line}: ${reason}`);
+-    if (f.length < header.length) { bad("too few fields"); continue; }
+-    const orderId = f[idx.order_id], cust = f[idx.customer_id], date = f[idx.order_date];
+-    const sku = f[idx.sku], qtyS = f[idx.quantity], priceS = f[idx.unit_price];
+-    const discS = idx.discount >= 0 ? f[idx.discount] : "";
++    const orderId = f.order_id, cust = f.customer_id, date = f.order_date;
++    const sku = f.sku, qtyS = f.quantity, priceS = f.unit_price, discS = f.discount;
++    const chk = (col) => f[col] === BAD && (bad(`invalid ${col}`), true);
++    if (chk("order_id")) continue;
+     if (orderId === "") { bad("empty order_id"); continue; }
++    if (chk("customer_id")) continue;
+     if (cust === "") { bad("empty customer_id"); continue; }
++    if (chk("order_date")) continue;
+     if (!validDate(date)) { bad("invalid order_date"); continue; }
++    if (chk("sku")) continue;
+     if (sku === "") { bad("empty sku"); continue; }
++    if (chk("quantity")) continue;
+     if (!DIGITS.test(qtyS) || BigInt(qtyS) < 1n) { bad("invalid quantity"); continue; }
++    if (chk("unit_price")) continue;
+     const price = toCents(priceS);
+     if (price === null) { bad("invalid unit_price"); continue; }
++    if (chk("discount")) continue;
+     let pct = 0n;
+     if (discS !== "") {
+       const d = toCents(discS);
+       if (d === null || d > 100n) { bad("invalid discount"); continue; }
+       pct = d;
+     }
++    if (typed && chk("notes")) continue;
+     const key = JSON.stringify([orderId, sku]);
+     if (seen.has(key)) { bad("duplicate (order_id, sku)"); continue; }
+     seen.add(key);
+diff --git a/src/typed.js b/src/typed.js
+new file mode 100644
+index 0000000..8f93cc6
+--- /dev/null
++++ b/src/typed.js
+@@ -0,0 +1,227 @@
++import { parse as parseYaml } from "yaml";
++import { unzipSync, strFromU8 } from "fflate";
++import { XMLParser } from "fast-xml-parser";
++
++export class DateVal {
++  constructor(s) { this.s = s; }
++}
++export const BAD = Symbol("bad");
++
++export class FormatError extends Error {}
++
++// Each reader returns {header?: string[], records: [{loc, obj}]} where obj is a
++// plain object (column -> raw value) or null for an invalid (non-object) record.
++
++export const readJson = (text) => {
++  let data;
++  try {
++    data = JSON.parse(text, (k, v, ctx) =>
++      typeof v === "number" && ctx?.source && /^-?[0-9]+$/.test(ctx.source) && !Number.isSafeInteger(v)
++        ? BigInt(ctx.source)
++        : v);
++  } catch (e) {
++    throw new FormatError(`invalid JSON: ${e.message}`);
++  }
++  if (!Array.isArray(data)) throw new FormatError("JSON top-level value is not an array");
++  return data.map((el, i) => ({ loc: `#${i + 1}`, obj: isObj(el) ? el : null }));
++};
++
++const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v) && !(v instanceof DateVal);
++
++export const readJsonl = (text) => {
++  const out = [];
++  const lines = text.split("\n");
++  lines.forEach((line, i) => {
++    if (line === "" || line === "\r") return;
++    let v;
++    try {
++      v = JSON.parse(line, (k, val, ctx) =>
++        typeof val === "number" && ctx?.source && /^-?[0-9]+$/.test(ctx.source) && !Number.isSafeInteger(val)
++          ? BigInt(ctx.source)
++          : val);
++    } catch {
++      v = null;
++    }
++    out.push({ loc: String(i + 1), obj: isObj(v) ? v : null });
++  });
++  return out;
++};
++
++const dateTag = {
++  tag: "tag:yaml.org,2002:timestamp",
++  default: true,
++  test: /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/,
++  resolve: (str) => new DateVal(str),
++};
++
++export const readYaml = (text) => {
++  let data;
++  try {
++    data = parseYaml(text, { schema: "core", customTags: [dateTag], intAsBigInt: true });
++  } catch (e) {
++    throw new FormatError(`invalid YAML: ${e.message}`);
++  }
++  if (!Array.isArray(data)) throw new FormatError("YAML top-level value is not a sequence");
++  return data.map((el, i) => ({ loc: `#${i + 1}`, obj: isObj(el) ? el : null }));
++};
++
++// ---------- XLSX ----------
++
++const xml = new XMLParser({
++  ignoreAttributes: false,
++  attributeNamePrefix: "@_",
++  textNodeName: "#text",
++  parseTagValue: false,
++  parseAttributeValue: false,
++  trimValues: false,
++  removeNSPrefix: false,
++  isArray: (name) => ["c", "row", "si", "t", "r", "xf", "numFmt", "sheet", "Relationship", "is"].includes(name),
++});
++
++const arr = (v) => (v === undefined || v === null ? [] : Array.isArray(v) ? v : [v]);
++const unescapeX = (s) => s.replace(/_x([0-9A-Fa-f]{4})_/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
++
++const textOf = (t) => (t === undefined || t === null ? "" : typeof t === "object" ? String(t["#text"] ?? "") : String(t));
++
++// concatenated text of an <si> / <is> element, ignoring phonetic runs
++const richText = (el) => {
++  if (el === undefined || el === null || typeof el !== "object") return "";
++  let s = "";
++  for (const t of arr(el.t)) s += textOf(t);
++  for (const r of arr(el.r)) for (const t of arr(r.t)) s += textOf(t);
++  return unescapeX(s);
++};
++
++const BUILTIN_DATE = new Set([14, 15, 16, 17, 18, 19, 20, 21, 22, 45, 46, 47]);
++
++const isDateFormat = (code) => {
++  let s = code.replace(/"[^"]*"/g, "").replace(/\\./g, "").replace(/_./g, "").replace(/\*./g, "");
++  const parts = s.split(";");
++  s = parts[0];
++  s = s.replace(/\[(?![hms]+\])[^\]]*\]/gi, "");
++  return /[dmyhs]/i.test(s.replace(/\[|\]/g, "")) && !/^general$/i.test(s.trim());
++};
++
++const colIndex = (ref) => {
++  const m = /^([A-Za-z]+)/.exec(ref);
++  if (!m) return -1;
++  let n = 0;
++  for (const c of m[1].toUpperCase()) n = n * 26 + c.charCodeAt(0) - 64;
++  return n - 1;
++};
++
++const serialToDate = (serial, is1904) => {
++  const days = Math.floor(serial);
++  let ms;
++  if (is1904) {
++    if (days < 0) return "";
++    ms = Date.UTC(1904, 0, 1) + days * 86400000;
++  } else {
++    if (days < 1 || days === 60) return "";
++    ms = Date.UTC(1899, 11, 30) + (days < 60 ? days + 1 : days) * 86400000;
++    if (days < 60) ms = Date.UTC(1899, 11, 31) + (days - 1) * 86400000;
++  }
++  const d = new Date(ms);
++  if (Number.isNaN(d.getTime())) return "";
++  return d.toISOString().slice(0, 10);
++};
++
++const resolvePath = (base, target) => {
++  if (target.startsWith("/")) return target.slice(1);
++  const parts = base.split("/").slice(0, -1);
++  for (const seg of target.split("/")) {
++    if (seg === "..") parts.pop();
++    else if (seg !== "." && seg !== "") parts.push(seg);
++  }
++  return parts.join("/");
++};
++
++export const readXlsx = (buf) => {
++  let files;
++  try {
++    files = unzipSync(new Uint8Array(buf));
++  } catch (e) {
++    throw new FormatError(`cannot open workbook: ${e.message}`);
++  }
++  const get = (p) => {
++    const f = files[p];
++    if (!f) return null;
++    return xml.parse(strFromU8(f));
++  };
++  let wb, rels;
++  try {
++    wb = get("xl/workbook.xml");
++    rels = get("xl/_rels/workbook.xml.rels");
++  } catch (e) {
++    throw new FormatError(`cannot open workbook: ${e.message}`);
++  }
++  if (!wb?.workbook) throw new FormatError("cannot open workbook: no workbook part");
++  const sheets = arr(wb.workbook.sheets?.sheet);
++  if (!sheets.length) throw new FormatError("workbook has no worksheet");
++  const rid = sheets[0]["@_r:id"];
++  const rel = arr(rels?.Relationships?.Relationship).find((r) => r["@_Id"] === rid);
++  if (!rel) throw new FormatError("cannot locate first worksheet");
++  const sheetPath = resolvePath("xl/workbook.xml", rel["@_Target"]);
++  let sheet, sst, styles;
++  try {
++    sheet = get(sheetPath);
++    sst = get("xl/sharedStrings.xml");
++    styles = get("xl/styles.xml");
++  } catch (e) {
++    throw new FormatError(`cannot open workbook: ${e.message}`);
++  }
++  if (!sheet?.worksheet) throw new FormatError("cannot open first worksheet");
++  const is1904 = ["1", "true"].includes(String(wb.workbook.workbookPr?.["@_date1904"] ?? ""));
++
++  const strings = arr(sst?.sst?.si).map(richText);
++
++  const customFmt = new Map();
++  for (const nf of arr(styles?.styleSheet?.numFmts?.numFmt)) customFmt.set(Number(nf["@_numFmtId"]), nf["@_formatCode"] ?? "");
++  const xfDate = arr(styles?.styleSheet?.cellXfs?.xf).map((xf) => {
++    const id = Number(xf["@_numFmtId"] ?? 0);
++    return customFmt.has(id) ? isDateFormat(customFmt.get(id)) : BUILTIN_DATE.has(id);
++  });
++
++  const rows = [];
++  let rowNo = 0;
++  for (const row of arr(sheet.worksheet.sheetData?.row)) {
++    rowNo = row["@_r"] ? Number(row["@_r"]) : rowNo + 1;
++    const cells = new Map();
++    let col = -1;
++    for (const c of arr(row.c)) {
++      col = c["@_r"] ? colIndex(c["@_r"]) : col + 1;
++      if (col < 0) continue;
++      const t = c["@_t"];
++      const vRaw = c.v === undefined || c.v === null ? undefined : textOf(c.v);
++      let val;
++      if (t === "inlineStr") {
++        val = richText(arr(c.is)[0]);
++      } else if (vRaw === undefined) {
++        continue;
++      } else if (t === "s") {
++        val = strings[Number(vRaw)];
++        if (val === undefined) val = BAD;
++      } else if (t === "str") {
++        val = unescapeX(vRaw);
++      } else if (t === "b" || t === "e") {
++        val = BAD;
++      } else if (t === "d") {
++        val = new DateVal(vRaw.trim().slice(0, 10));
++      } else {
++        const n = Number(vRaw.trim());
++        if (vRaw.trim() === "" || !Number.isFinite(n)) {
++          val = BAD;
++        } else if (xfDate[Number(c["@_s"] ?? 0)]) {
++          val = new DateVal(serialToDate(n, is1904));
++        } else {
++          val = n;
++        }
++      }
++      if (val === "") continue;
++      cells.set(col, val);
++    }
++    if (cells.size) rows.push({ row: rowNo, cells });
++  }
++  if (!rows.length) throw new FormatError("worksheet has no header row");
++  return rows;
++};
+diff --git a/yarn.lock b/yarn.lock
+index fb57ccd..ca4bad0 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -2,3 +2,64 @@
+ # yarn lockfile v1
+ 
+ 
++"@nodable/entities@^3.1.0":
++  version "3.1.0"
++  resolved "https://registry.yarnpkg.com/@nodable/entities/-/entities-3.1.0.tgz#2ab366e0e607fdef8d65c5d84c58d191812bbd4b"
++  integrity sha512-LsS/DjHr+uDM647Gru/cA8+J3a3HfhttwCKLyuoyN7yXTFCxKBtSgMQBvrW9yNPa2/zDRUNuGPaH5QUFoa4arQ==
++
++anynum@^1.0.1:
++  version "1.0.1"
++  resolved "https://registry.yarnpkg.com/anynum/-/anynum-1.0.1.tgz#2aac00e08dfad3726c1d462e60dbc2f831659a44"
++  integrity sha512-N6//FLET/tXYNM/F6ABca1oH6fWB+KlTt909Le28WMDBk8oaT4vY17DCrwg2MvmuqUKt3Ni4N5dGJ/EoBgcO6A==
++
++fast-xml-builder@^1.3.2:
++  version "1.3.2"
++  resolved "https://registry.yarnpkg.com/fast-xml-builder/-/fast-xml-builder-1.3.2.tgz#08837335066983b7659f342ce1559869c068192e"
++  integrity sha512-OX91VSlShLPDgRZV7tk/YQ4l8tT75QziF5Ixg8g4PFbCVPjuTWwN+yQfAxLJ0dufJpprdOd6HlM74Jhd39TcBQ==
++  dependencies:
++    path-expression-matcher "^1.6.2"
++    xml-naming "^0.3.0"
++
++fast-xml-parser@^5.12.1:
++  version "5.12.1"
++  resolved "https://registry.yarnpkg.com/fast-xml-parser/-/fast-xml-parser-5.12.1.tgz#a0f3ebed7a1107db9456c0dd0ed233cbc00ae709"
++  integrity sha512-wR8dO/fx+z8C5exuem1e7BKOWvjsuzvjS/tvA/Xu3Z1zQqJGcXrPzXbcAiaMgp2KjreEROcTkmnnisrcmJ2hYQ==
++  dependencies:
++    "@nodable/entities" "^3.1.0"
++    fast-xml-builder "^1.3.2"
++    is-unsafe "^2.0.3"
++    path-expression-matcher "^1.6.2"
++    strnum "^2.5.1"
++    xml-naming "^0.3.0"
++
++fflate@^0.8.3:
++  version "0.8.3"
++  resolved "https://registry.yarnpkg.com/fflate/-/fflate-0.8.3.tgz#bc27d8eb30343d4d512abb03480202ce65d825fc"
++  integrity sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==
++
++is-unsafe@^2.0.3:
++  version "2.0.3"
++  resolved "https://registry.yarnpkg.com/is-unsafe/-/is-unsafe-2.0.3.tgz#c8bc72c9d354dc9483dab9c26ff69bf5ec68d7b0"
++  integrity sha512-ZBllczCCO267vgdFb6Tq3pv+LhHaCiGMdr+ZsuL+OopruAg7S+3ZDs1vD0RPC0uSrkjzbraxaGjtX1YBxjPeFQ==
++
++path-expression-matcher@^1.6.2:
++  version "1.6.2"
++  resolved "https://registry.yarnpkg.com/path-expression-matcher/-/path-expression-matcher-1.6.2.tgz#567c73c07197e9dcef24e90edcdc571056599168"
++  integrity sha512-enSlaiat05iasnzmgNxRj8reFdj3puY2QpNgP1aPIaVfT6nn9ICuPoFlKHk8EN22HcwewshO+mN2DGbkCEOtqQ==
++
++strnum@^2.5.1:
++  version "2.5.1"
++  resolved "https://registry.yarnpkg.com/strnum/-/strnum-2.5.1.tgz#6b2f52021fa47589c3cf643afd80032dfa312b78"
++  integrity sha512-UM4nTLWzQiDBseVxUGxN0wJzIk0UU89Qi7pKXz9qISo+lhviJikTuikBsK/oFRlpvYHvSdz0TVoLyQ+sEpYwxA==
++  dependencies:
++    anynum "^1.0.1"
++
++xml-naming@^0.3.0:
++  version "0.3.0"
++  resolved "https://registry.yarnpkg.com/xml-naming/-/xml-naming-0.3.0.tgz#46c1e18bfe2858479982dd2accf34d16e749eda2"
++  integrity sha512-ghig2TBE/H11aOVgmahA3MhimvkBr6JIYknH/Dhdk10nXwdbIqBJsbfMxpvFPG8bAw77gN29aQWvKpmVoPlvPQ==
++
++yaml@^2.9.1:
++  version "2.9.1"
++  resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.9.1.tgz#c16233fb31944e705cfefaff38795587f57588ce"
++  integrity sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==
