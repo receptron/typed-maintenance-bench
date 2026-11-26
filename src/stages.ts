@@ -1,4 +1,4 @@
-export const MAX_STAGE = 2;
+export const MAX_STAGE = 4;
 
 export const parseStageRange = (text: string): number[] => {
   const match = /^(\d+)(?:-(\d+))?$/.exec(text);
