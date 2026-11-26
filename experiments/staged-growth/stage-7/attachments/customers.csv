@@ -1,0 +1,4 @@
+order_id,customer_id,order_date,sku,quantity,unit_price
+1,Müller,2026-03-02,A,1,12.00
+2,田中,2026-03-03,B,1,8.00
+3,Schmidt,2026-03-03,A,1,5.00

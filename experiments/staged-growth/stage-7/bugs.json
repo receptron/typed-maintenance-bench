@@ -1,0 +1,42 @@
+{
+  "bugs": [
+    {
+      "id": "a",
+      "plant": "For TSV files whose lines end with CRLF, keep the carriage return at the end of the last field of every line, the header line included. So when `currency` is the last column, its name is not recognised, the column is treated as absent and those records count as USD. TSV files with LF line ends, and every other format, must behave exactly as now.",
+      "replacements": [
+        {
+          "file": "formats/tsv.ts",
+          "from": "text.split(\"\\n\").map((line) => line.replace(/\\r$/, \"\"));",
+          "to": "text.split(\"\\n\");"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "plant": "In the report tool's file names, percent-encode each character that is not kept as it is by its UTF-16 code unit in uppercase hexadecimal, padded to two digits (`ü` becomes `%FC`, `田` becomes `%7530`), instead of by its UTF-8 bytes. Every ASCII character must be encoded exactly as now, and the file contents must not change.",
+      "replacements": [
+        {
+          "file": "reportFile.ts",
+          "from": "const percentEncoded = (character: string): string =>\n  Array.from(\n    new TextEncoder().encode(character),\n    (byte) => `%${byte.toString(16).toUpperCase().padStart(HEX_DIGITS, \"0\")}`,\n  ).join(\"\");",
+          "to": "const percentEncoded = (character: string): string =>\n  `%${character.charCodeAt(0).toString(16).toUpperCase().padStart(HEX_DIGITS, \"0\")}`;"
+        },
+        {
+          "file": "reportFile.ts",
+          "from": "// Every UTF-8 byte outside A-Z a-z 0-9 - _ becomes %XX, so no id can name a path outside the directory.",
+          "to": "// Characters outside A-Z a-z 0-9 - _ become %XX, so no id can name a path outside the directory."
+        }
+      ]
+    },
+    {
+      "id": "c",
+      "plant": "In the CLI, when both the config file and `--time-zone` give a time zone, use the one from the config file. Every other setting, and the time zone when only one of the two gives it, must behave exactly as now.",
+      "replacements": [
+        {
+          "file": "args.ts",
+          "from": "  const settings = { ...checkedConfig(pairs.get(\"--config\"), input), ...flagSettings(pairs) };\n  const query = toQuery(settings);",
+          "to": "  const config = checkedConfig(pairs.get(\"--config\"), input);\n  const settings = { ...config, ...flagSettings(pairs) };\n  const query = toQuery({ ...settings, timeZone: config.timeZone ?? settings.timeZone });"
+        }
+      ]
+    }
+  ]
+}

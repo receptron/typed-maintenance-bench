@@ -1,0 +1,182 @@
+{
+  "cases": [
+    {
+      "id": "s7-a-cli-customer",
+      "description": "CRLF TSV keeps the currency of the last column",
+      "args": [
+        "--input",
+        "crlf6.tsv",
+        "--group-by",
+        "customer"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "customer\trevenue\nT1\t1.00 EUR\nT1\t2.00\nT2\t3.00 JPY\nTOTAL\t1.00 EUR\nTOTAL\t3.00 JPY\nTOTAL\t2.00\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s7-a-cli-day-new-york",
+      "description": "CRLF TSV by day in New York",
+      "args": [
+        "--input",
+        "crlf6.tsv",
+        "--group-by",
+        "day",
+        "--time-zone",
+        "America/New_York"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-01\t1.00 EUR\n2026-03-02\t3.00 JPY\n2026-03-02\t2.00\nTOTAL\t1.00 EUR\nTOTAL\t3.00 JPY\nTOTAL\t2.00\n",
+        "stderrPrefixes": []
+      }
+    },
+    {
+      "id": "s7-a-report",
+      "description": "Report from CRLF TSV",
+      "tool": "report",
+      "args": [
+        "--input",
+        "crlf6.tsv",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [],
+        "files": {
+          "dir": "out",
+          "contents": {
+            "T1.txt": "customer\tT1\nweek\trevenue\n2026-W10\t1.00 EUR\n2026-W10\t2.00\nTOTAL\t1.00 EUR\nTOTAL\t2.00\n",
+            "T2.txt": "customer\tT2\nweek\trevenue\n2026-W10\t3.00 JPY\nTOTAL\t3.00 JPY\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "s7-b-report-csv",
+      "description": "Non-ASCII customer ids, byte by byte",
+      "tool": "report",
+      "args": [
+        "--input",
+        "names.csv",
+        "--out-dir",
+        "out"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [],
+        "files": {
+          "dir": "out",
+          "contents": {
+            "M%C3%BCller.txt": "customer\tMüller\nweek\trevenue\n2026-W10\t1.00\nTOTAL\t1.00\n",
+            "%E7%94%B0%E4%B8%AD.txt": "customer\t田中\nweek\trevenue\n2026-W10\t2.00\nTOTAL\t2.00\n",
+            "Zo%C3%AB-1.txt": "customer\tZoë-1\nweek\trevenue\n2026-W10\t3.00\nTOTAL\t3.00\n",
+            "%F0%9F%99%82x.txt": "customer\t🙂x\nweek\trevenue\n2026-W10\t4.00\nTOTAL\t4.00\n",
+            "A_b.txt": "customer\tA_b\nweek\trevenue\n2026-W10\t5.00\nTOTAL\t5.00\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "s7-b-report-json",
+      "description": "Non-ASCII customer ids from JSON",
+      "tool": "report",
+      "args": [
+        "--input",
+        "names.json",
+        "--out-dir",
+        "reports"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "",
+        "stderrPrefixes": [],
+        "files": {
+          "dir": "reports",
+          "contents": {
+            "M%C3%BCller.txt": "customer\tMüller\nweek\trevenue\n2026-W10\t1.00\nTOTAL\t1.00\n",
+            "%E7%94%B0%E4%B8%AD.txt": "customer\t田中\nweek\trevenue\n2026-W10\t2.00\nTOTAL\t2.00\n",
+            "Zo%C3%AB-1.txt": "customer\tZoë-1\nweek\trevenue\n2026-W10\t3.00\nTOTAL\t3.00\n",
+            "%F0%9F%99%82x.txt": "customer\t🙂x\nweek\trevenue\n2026-W10\t4.00\nTOTAL\t4.00\n",
+            "A_b.txt": "customer\tA_b\nweek\trevenue\n2026-W10\t5.00\nTOTAL\t5.00\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "s7-c-flag-utc",
+      "description": "--time-zone UTC over a Tokyo config",
+      "args": [
+        "--input",
+        "orders6.csv",
+        "--config",
+        "cfg-tokyo.json",
+        "--time-zone",
+        "UTC"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-01\t5.00 EUR\n2026-03-01\t4.00 JPY\n2026-03-01\t20.00\n2026-03-02\t2.00 EUR\n2026-03-02\t4.00\n2026-03-04\t1.00 EUR\n2026-03-04\t6.30\n2026-03-09\t1.00\nTOTAL\t8.00 EUR\nTOTAL\t4.00 JPY\nTOTAL\t31.30\n",
+        "stderrPrefixes": [
+          "orders6.csv:6:",
+          "orders6.csv:8:",
+          "orders6.csv:10:",
+          "orders6.csv:11:",
+          "orders6.csv:15:",
+          "orders6.csv:16:"
+        ]
+      }
+    },
+    {
+      "id": "s7-c-flag-new-york",
+      "description": "--time-zone New York over a Tokyo config",
+      "args": [
+        "--input",
+        "orders6.csv",
+        "--config",
+        "cfg-tokyo.json",
+        "--time-zone",
+        "America/New_York"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "day\trevenue\n2026-03-01\t5.00 EUR\n2026-03-01\t4.00 JPY\n2026-03-01\t23.00\n2026-03-02\t2.00 EUR\n2026-03-02\t1.00\n2026-03-04\t1.00 EUR\n2026-03-04\t6.30\n2026-03-09\t1.00\nTOTAL\t8.00 EUR\nTOTAL\t4.00 JPY\nTOTAL\t31.30\n",
+        "stderrPrefixes": [
+          "orders6.csv:6:",
+          "orders6.csv:8:",
+          "orders6.csv:10:",
+          "orders6.csv:11:",
+          "orders6.csv:15:",
+          "orders6.csv:16:"
+        ]
+      }
+    },
+    {
+      "id": "s7-c-flag-with-filter",
+      "description": "--time-zone decides which records a date filter keeps",
+      "args": [
+        "--input",
+        "orders-c.csv",
+        "--config",
+        "cfg-tokyo.json",
+        "--group-by",
+        "customer",
+        "--from",
+        "2026-03-01",
+        "--to",
+        "2026-03-01",
+        "--time-zone",
+        "America/New_York"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "customer\trevenue\nK1\t3.00\nK2\t3.00\nTOTAL\t6.00\n",
+        "stderrPrefixes": []
+      }
+    }
+  ]
+}
