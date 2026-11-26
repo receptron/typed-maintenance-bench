@@ -6,6 +6,8 @@ export type Arm = {
   template: string;
   taskRun: string;
   command: string[];
+  libraryEntry: string;
+  taskLibrary: string;
   build: string[] | null;
   verify: string[] | null;
   notes: string;
@@ -26,6 +28,8 @@ const tsArm = (id: ArmId, notes: string[]): Arm => ({
   template: id,
   taskRun: "node dist/cli.js",
   command: ["node", "{tree}/dist/cli.js"],
+  libraryEntry: "{tree}/dist/index.js",
+  taskLibrary: "`src/index.ts`, which `yarn build` compiles to `dist/index.js`",
   build: ["yarn", "-s", "build"],
   verify: ["yarn", "-s", "verify"],
   notes: notes.join(" "),
@@ -38,6 +42,8 @@ export const ARMS: Record<ArmId, Arm> = {
     template: "js",
     taskRun: "node src/cli.js",
     command: ["node", "{tree}/src/cli.js"],
+    libraryEntry: "{tree}/src/index.js",
+    taskLibrary: "`src/index.js`",
     build: null,
     verify: null,
     notes: `Write the tool in JavaScript (ES modules) ${NODE_VERSION_NOTE} The entry point is \`src/cli.js\`.`,

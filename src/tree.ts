@@ -7,7 +7,7 @@ import { REPO_ROOT, RUNNER_BUILD_DIR, referenceDir, stageDir, templateDir } from
 export type Mode = "cumulative" | "reset";
 
 const SNAPSHOT_EXCLUDES = new Set(["node_modules", "dist", ".git"]);
-const RUNNER_FILES = ["cases.js", "caseRunner.js"];
+const RUNNER_FILES = ["cases.js", "caseRunner.js", "apiCases.js", "apiRunner.js", "apiWorker.js"];
 const INSTALL_TIMEOUT_MS = 10 * 60 * 1000;
 const COMPILE_TIMEOUT_MS = 5 * 60 * 1000;
 const GIT_IDENTITY = ["-c", "user.name=bench", "-c", "user.email=bench@localhost"];
@@ -66,12 +66,14 @@ const installTests = (arm: Arm, stage: number, tree: string): void => {
   RUNNER_FILES.forEach((file) => cpSync(path.join(RUNNER_BUILD_DIR, file), path.join(testsDir, "runner", file)));
   writeFileSync(path.join(testsDir, "runner", "package.json"), '{ "type": "module" }\n');
   writeFileSync(path.join(testsDir, "command.json"), `${JSON.stringify(arm.command)}\n`);
+  writeFileSync(path.join(testsDir, "library.json"), `${JSON.stringify(arm.libraryEntry)}\n`);
 };
 
 export const renderTask = (arm: Arm, stage: number): string =>
   readFileSync(path.join(stageDir(stage), "task.md"), "utf8")
     .replaceAll("{{RUN}}", arm.taskRun)
-    .replaceAll("{{ARM_NOTES}}", arm.notes);
+    .replaceAll("{{ARM_NOTES}}", arm.notes)
+    .replaceAll("{{LIB}}", arm.taskLibrary);
 
 export type PrepareOptions = { arm: Arm; stage: number; mode: Mode; previousTree: string | null; tree: string };
 

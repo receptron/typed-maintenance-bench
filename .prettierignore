@@ -3,4 +3,5 @@ node_modules/
 results/
 experiments/**/fixtures/
 experiments/**/cases.json
+experiments/**/api-cases.json
 *.md

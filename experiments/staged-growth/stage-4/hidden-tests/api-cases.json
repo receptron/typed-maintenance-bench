@@ -1,0 +1,1841 @@
+{
+  "cases": [
+    {
+      "id": "s4-read-csv",
+      "description": "Valid records after the duplicate rule, and warnings",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.csv"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "C1",
+              "orderDate": "2026-03-01",
+              "sku": "A-1",
+              "quantity": 2,
+              "unitPriceCents": 1000,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "C2",
+              "orderDate": "2026-03-01",
+              "sku": "B|x",
+              "quantity": 1,
+              "unitPriceCents": 550,
+              "discountPercent": 10,
+              "notes": ""
+            },
+            {
+              "orderId": "3",
+              "customerId": "C1",
+              "orderDate": "2026-03-02",
+              "sku": "A-1",
+              "quantity": 3,
+              "unitPriceCents": 125,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "4",
+              "customerId": "C'3",
+              "orderDate": "2026-03-02",
+              "sku": "<b>&\"q\"",
+              "quantity": 1,
+              "unitPriceCents": 700,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "5",
+              "customerId": "C2",
+              "orderDate": "2026-03-03",
+              "sku": "A-2",
+              "quantity": 1,
+              "unitPriceCents": 99,
+              "discountPercent": 50,
+              "notes": ""
+            },
+            {
+              "orderId": "6",
+              "customerId": "C1",
+              "orderDate": "2026-03-03",
+              "sku": "ß",
+              "quantity": 4,
+              "unitPriceCents": 250,
+              "discountPercent": 0,
+              "notes": "gift wrap"
+            },
+            {
+              "orderId": "8",
+              "customerId": "C2",
+              "orderDate": "2026-03-05",
+              "sku": "B|x",
+              "quantity": 2,
+              "unitPriceCents": 300,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "9",
+              "customerId": "C1",
+              "orderDate": "2026-03-05",
+              "sku": "A",
+              "quantity": 1,
+              "unitPriceCents": 100,
+              "discountPercent": 0,
+              "notes": ""
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders.csv",
+              "location": "8",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.csv",
+              "location": "9",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s4-read-json",
+      "description": "JSON locations are #n",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.json"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "C1",
+              "orderDate": "2026-03-01",
+              "sku": "A-1",
+              "quantity": 2,
+              "unitPriceCents": 1000,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "C2",
+              "orderDate": "2026-03-01",
+              "sku": "B|x",
+              "quantity": 1,
+              "unitPriceCents": 550,
+              "discountPercent": 10,
+              "notes": ""
+            },
+            {
+              "orderId": "3",
+              "customerId": "C1",
+              "orderDate": "2026-03-02",
+              "sku": "A-1",
+              "quantity": 3,
+              "unitPriceCents": 125,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "4",
+              "customerId": "C'3",
+              "orderDate": "2026-03-02",
+              "sku": "<b>&\"q\"",
+              "quantity": 1,
+              "unitPriceCents": 700,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "5",
+              "customerId": "C2",
+              "orderDate": "2026-03-03",
+              "sku": "A-2",
+              "quantity": 1,
+              "unitPriceCents": 99,
+              "discountPercent": 50,
+              "notes": ""
+            },
+            {
+              "orderId": "6",
+              "customerId": "C1",
+              "orderDate": "2026-03-03",
+              "sku": "ß",
+              "quantity": 4,
+              "unitPriceCents": 250,
+              "discountPercent": 0,
+              "notes": "gift wrap"
+            },
+            {
+              "orderId": "8",
+              "customerId": "C2",
+              "orderDate": "2026-03-05",
+              "sku": "B|x",
+              "quantity": 2,
+              "unitPriceCents": 300,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "9",
+              "customerId": "C1",
+              "orderDate": "2026-03-05",
+              "sku": "A",
+              "quantity": 1,
+              "unitPriceCents": 100,
+              "discountPercent": 0,
+              "notes": ""
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders.json",
+              "location": "#7",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.json",
+              "location": "#8",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s4-read-format",
+      "description": "format overrides the extension",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.data",
+          "format": "csv"
+        }
+      ],
+      "expect": {
+        "returns": {
+          "records": [
+            {
+              "orderId": "1",
+              "customerId": "C1",
+              "orderDate": "2026-03-01",
+              "sku": "A-1",
+              "quantity": 2,
+              "unitPriceCents": 1000,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "2",
+              "customerId": "C2",
+              "orderDate": "2026-03-01",
+              "sku": "B|x",
+              "quantity": 1,
+              "unitPriceCents": 550,
+              "discountPercent": 10,
+              "notes": ""
+            },
+            {
+              "orderId": "3",
+              "customerId": "C1",
+              "orderDate": "2026-03-02",
+              "sku": "A-1",
+              "quantity": 3,
+              "unitPriceCents": 125,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "4",
+              "customerId": "C'3",
+              "orderDate": "2026-03-02",
+              "sku": "<b>&\"q\"",
+              "quantity": 1,
+              "unitPriceCents": 700,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "5",
+              "customerId": "C2",
+              "orderDate": "2026-03-03",
+              "sku": "A-2",
+              "quantity": 1,
+              "unitPriceCents": 99,
+              "discountPercent": 50,
+              "notes": ""
+            },
+            {
+              "orderId": "6",
+              "customerId": "C1",
+              "orderDate": "2026-03-03",
+              "sku": "ß",
+              "quantity": 4,
+              "unitPriceCents": 250,
+              "discountPercent": 0,
+              "notes": "gift wrap"
+            },
+            {
+              "orderId": "8",
+              "customerId": "C2",
+              "orderDate": "2026-03-05",
+              "sku": "B|x",
+              "quantity": 2,
+              "unitPriceCents": 300,
+              "discountPercent": 0,
+              "notes": ""
+            },
+            {
+              "orderId": "9",
+              "customerId": "C1",
+              "orderDate": "2026-03-05",
+              "sku": "A",
+              "quantity": 1,
+              "unitPriceCents": 100,
+              "discountPercent": 0,
+              "notes": ""
+            }
+          ],
+          "warnings": [
+            {
+              "file": "orders.data",
+              "location": "8",
+              "reason": {
+                "$anyString": true
+              }
+            },
+            {
+              "file": "orders.data",
+              "location": "9",
+              "reason": {
+                "$anyString": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s4-read-missing",
+      "description": "File that cannot be read",
+      "call": "read",
+      "args": [
+        {
+          "path": "missing.csv"
+        }
+      ],
+      "expect": {
+        "throws": "ReadError"
+      }
+    },
+    {
+      "id": "s4-read-syntax",
+      "description": "Invalid JSON",
+      "call": "read",
+      "args": [
+        {
+          "path": "syntax.json"
+        }
+      ],
+      "expect": {
+        "throws": "ReadError"
+      }
+    },
+    {
+      "id": "s4-read-missing-column",
+      "description": "Header missing a column",
+      "call": "read",
+      "args": [
+        {
+          "path": "missing-column.csv"
+        }
+      ],
+      "expect": {
+        "throws": "ReadError"
+      }
+    },
+    {
+      "id": "s4-read-type-string",
+      "description": "source is a string, not an object",
+      "call": "read",
+      "args": [
+        "orders.csv"
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-read-type-no-path",
+      "description": "source without path",
+      "call": "read",
+      "args": [
+        {}
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-read-type-path-number",
+      "description": "path is not a string",
+      "call": "read",
+      "args": [
+        {
+          "path": 5
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-read-type-format",
+      "description": "Unknown format",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.csv",
+          "format": "pdf"
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-read-type-extension",
+      "description": "No format and an extension that names none",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.data"
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-read-type-extra",
+      "description": "Property not in the contract",
+      "call": "read",
+      "args": [
+        {
+          "path": "orders.csv",
+          "groupBy": [
+            "day"
+          ]
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-read-type-missing-arg",
+      "description": "No argument",
+      "call": "read",
+      "args": [],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-sku",
+      "description": "Group by one key",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "sku"
+          ]
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "<b>&\"q\""
+              ],
+              "revenueCents": 700
+            },
+            {
+              "key": [
+                "A"
+              ],
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "A-1"
+              ],
+              "revenueCents": 2375
+            },
+            {
+              "key": [
+                "A-2"
+              ],
+              "revenueCents": 50
+            },
+            {
+              "key": [
+                "B|x"
+              ],
+              "revenueCents": 1095
+            },
+            {
+              "key": [
+                "ß"
+              ],
+              "revenueCents": 1000
+            }
+          ],
+          "totalCents": 5320
+        }
+      }
+    },
+    {
+      "id": "s4-agg-day",
+      "description": "Group by day",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ]
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "revenueCents": 2495
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "revenueCents": 1075
+            },
+            {
+              "key": [
+                "2026-03-03"
+              ],
+              "revenueCents": 1050
+            },
+            {
+              "key": [
+                "2026-03-05"
+              ],
+              "revenueCents": 700
+            }
+          ],
+          "totalCents": 5320
+        }
+      }
+    },
+    {
+      "id": "s4-agg-day-sku",
+      "description": "Two keys",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day",
+            "sku"
+          ]
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day",
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01",
+                "A-1"
+              ],
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "2026-03-01",
+                "B|x"
+              ],
+              "revenueCents": 495
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "<b>&\"q\""
+              ],
+              "revenueCents": 700
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "A-1"
+              ],
+              "revenueCents": 375
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "A-2"
+              ],
+              "revenueCents": 50
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "ß"
+              ],
+              "revenueCents": 1000
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "A"
+              ],
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "B|x"
+              ],
+              "revenueCents": 600
+            }
+          ],
+          "totalCents": 5320
+        }
+      }
+    },
+    {
+      "id": "s4-agg-sku-day",
+      "description": "Component-wise sort",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "sku",
+            "day"
+          ]
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "sku",
+            "day"
+          ],
+          "rows": [
+            {
+              "key": [
+                "<b>&\"q\"",
+                "2026-03-02"
+              ],
+              "revenueCents": 700
+            },
+            {
+              "key": [
+                "A",
+                "2026-03-05"
+              ],
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "A-1",
+                "2026-03-01"
+              ],
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "A-1",
+                "2026-03-02"
+              ],
+              "revenueCents": 375
+            },
+            {
+              "key": [
+                "A-2",
+                "2026-03-03"
+              ],
+              "revenueCents": 50
+            },
+            {
+              "key": [
+                "B|x",
+                "2026-03-01"
+              ],
+              "revenueCents": 495
+            },
+            {
+              "key": [
+                "B|x",
+                "2026-03-05"
+              ],
+              "revenueCents": 600
+            },
+            {
+              "key": [
+                "ß",
+                "2026-03-03"
+              ],
+              "revenueCents": 1000
+            }
+          ],
+          "totalCents": 5320
+        }
+      }
+    },
+    {
+      "id": "s4-agg-range",
+      "description": "Date range",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "from": "2026-03-02",
+          "to": "2026-03-03"
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "revenueCents": 1075
+            },
+            {
+              "key": [
+                "2026-03-03"
+              ],
+              "revenueCents": 1050
+            }
+          ],
+          "totalCents": 2125
+        }
+      }
+    },
+    {
+      "id": "s4-agg-range-tokyo",
+      "description": "Date range independent of TZ",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "from": "2026-03-02",
+          "to": "2026-03-03"
+        }
+      ],
+      "env": {
+        "TZ": "Asia/Tokyo"
+      },
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "revenueCents": 1075
+            },
+            {
+              "key": [
+                "2026-03-03"
+              ],
+              "revenueCents": 1050
+            }
+          ],
+          "totalCents": 2125
+        }
+      }
+    },
+    {
+      "id": "s4-agg-prefix",
+      "description": "SKU prefix",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "sku"
+          ],
+          "skuPrefix": "A-"
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "A-1"
+              ],
+              "revenueCents": 2375
+            },
+            {
+              "key": [
+                "A-2"
+              ],
+              "revenueCents": 50
+            }
+          ],
+          "totalCents": 2425
+        }
+      }
+    },
+    {
+      "id": "s4-agg-empty",
+      "description": "No records",
+      "call": "aggregate",
+      "args": [
+        [],
+        {
+          "groupBy": [
+            "day"
+          ]
+        }
+      ],
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [],
+          "totalCents": 0
+        }
+      }
+    },
+    {
+      "id": "s4-agg-round-per-record",
+      "description": "Each record rounds on its own: 49.5 + 49.5 is 50 + 50",
+      "call": "aggregate",
+      "args": [
+        [
+          {
+            "orderId": "r1",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "R",
+            "quantity": 1,
+            "unitPriceCents": 99,
+            "discountPercent": 50,
+            "notes": ""
+          },
+          {
+            "orderId": "r2",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "R",
+            "quantity": 1,
+            "unitPriceCents": 99,
+            "discountPercent": 50,
+            "notes": ""
+          }
+        ],
+        {
+          "groupBy": [
+            "sku"
+          ]
+        }
+      ],
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "R"
+              ],
+              "revenueCents": 100
+            }
+          ],
+          "totalCents": 100
+        }
+      }
+    },
+    {
+      "id": "s4-agg-no-dedup",
+      "description": "aggregate sums every record it is given",
+      "call": "aggregate",
+      "args": [
+        [
+          {
+            "orderId": "d",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "D",
+            "quantity": 1,
+            "unitPriceCents": 100,
+            "discountPercent": 0,
+            "notes": ""
+          },
+          {
+            "orderId": "d",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "D",
+            "quantity": 1,
+            "unitPriceCents": 100,
+            "discountPercent": 0,
+            "notes": ""
+          }
+        ],
+        {
+          "groupBy": [
+            "customer"
+          ]
+        }
+      ],
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "customer"
+          ],
+          "rows": [
+            {
+              "key": [
+                "C1"
+              ],
+              "revenueCents": 200
+            }
+          ],
+          "totalCents": 200
+        }
+      }
+    },
+    {
+      "id": "s4-agg-no-mutation",
+      "description": "Records stay as given (the runner checks every argument)",
+      "call": "aggregate",
+      "args": [
+        [
+          {
+            "orderId": "u1",
+            "customerId": "C2",
+            "orderDate": "2026-03-02",
+            "sku": "B",
+            "quantity": 1,
+            "unitPriceCents": 100,
+            "discountPercent": 0,
+            "notes": ""
+          },
+          {
+            "orderId": "u2",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "A",
+            "quantity": 1,
+            "unitPriceCents": 200,
+            "discountPercent": 0,
+            "notes": ""
+          }
+        ],
+        {
+          "groupBy": [
+            "day"
+          ]
+        }
+      ],
+      "expect": {
+        "returns": {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01"
+              ],
+              "revenueCents": 200
+            },
+            {
+              "key": [
+                "2026-03-02"
+              ],
+              "revenueCents": 100
+            }
+          ],
+          "totalCents": 300
+        }
+      }
+    },
+    {
+      "id": "s4-agg-type-no-groupby",
+      "description": "spec without groupBy",
+      "call": "aggregate",
+      "args": [
+        {}
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-type-groupby-empty",
+      "description": "Empty groupBy",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": []
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-type-groupby-string",
+      "description": "groupBy is a string",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": "day"
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-type-groupby-unknown",
+      "description": "Unknown key",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "week"
+          ]
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-type-groupby-dup",
+      "description": "Repeated key",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day",
+            "day"
+          ]
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-type-from-date",
+      "description": "from is not a calendar date",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "from": "2026-02-30"
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-type-from-number",
+      "description": "from is not a string",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "from": 20260301
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-type-range",
+      "description": "from later than to",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "from": "2026-03-05",
+          "to": "2026-03-01"
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-type-prefix",
+      "description": "skuPrefix is not a string",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "sku"
+          ],
+          "skuPrefix": 5
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-type-extra",
+      "description": "Property not in the contract",
+      "call": "aggregate",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "fromDate": "2026-03-01"
+        }
+      ],
+      "recordsFrom": {
+        "path": "orders.csv"
+      },
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-type-records",
+      "description": "records is not an array",
+      "call": "aggregate",
+      "args": [
+        "orders.csv",
+        {
+          "groupBy": [
+            "day"
+          ]
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-agg-type-spec",
+      "description": "spec is missing",
+      "call": "aggregate",
+      "args": [
+        [
+          {
+            "orderId": "1",
+            "customerId": "C1",
+            "orderDate": "2026-03-01",
+            "sku": "A-1",
+            "quantity": 2,
+            "unitPriceCents": 1000,
+            "discountPercent": 0,
+            "notes": ""
+          },
+          {
+            "orderId": "2",
+            "customerId": "C2",
+            "orderDate": "2026-03-01",
+            "sku": "B|x",
+            "quantity": 1,
+            "unitPriceCents": 550,
+            "discountPercent": 10,
+            "notes": ""
+          },
+          {
+            "orderId": "3",
+            "customerId": "C1",
+            "orderDate": "2026-03-02",
+            "sku": "A-1",
+            "quantity": 3,
+            "unitPriceCents": 125,
+            "discountPercent": 0,
+            "notes": ""
+          },
+          {
+            "orderId": "4",
+            "customerId": "C'3",
+            "orderDate": "2026-03-02",
+            "sku": "<b>&\"q\"",
+            "quantity": 1,
+            "unitPriceCents": 700,
+            "discountPercent": 0,
+            "notes": ""
+          },
+          {
+            "orderId": "5",
+            "customerId": "C2",
+            "orderDate": "2026-03-03",
+            "sku": "A-2",
+            "quantity": 1,
+            "unitPriceCents": 99,
+            "discountPercent": 50,
+            "notes": ""
+          },
+          {
+            "orderId": "6",
+            "customerId": "C1",
+            "orderDate": "2026-03-03",
+            "sku": "ß",
+            "quantity": 4,
+            "unitPriceCents": 250,
+            "discountPercent": 0,
+            "notes": "gift wrap"
+          },
+          {
+            "orderId": "8",
+            "customerId": "C2",
+            "orderDate": "2026-03-05",
+            "sku": "B|x",
+            "quantity": 2,
+            "unitPriceCents": 300,
+            "discountPercent": 0,
+            "notes": ""
+          },
+          {
+            "orderId": "9",
+            "customerId": "C1",
+            "orderDate": "2026-03-05",
+            "sku": "A",
+            "quantity": 1,
+            "unitPriceCents": 100,
+            "discountPercent": 0,
+            "notes": ""
+          }
+        ]
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-render-text",
+      "description": "render text matches the CLI",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "day",
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01",
+                "A-1"
+              ],
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "2026-03-01",
+                "B|x"
+              ],
+              "revenueCents": 495
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "<b>&\"q\""
+              ],
+              "revenueCents": 700
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "A-1"
+              ],
+              "revenueCents": 375
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "A-2"
+              ],
+              "revenueCents": 50
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "ß"
+              ],
+              "revenueCents": 1000
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "A"
+              ],
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "B|x"
+              ],
+              "revenueCents": 600
+            }
+          ],
+          "totalCents": 5320
+        },
+        "text"
+      ],
+      "expect": {
+        "returns": "day\tsku\trevenue\n2026-03-01\tA-1\t20.00\n2026-03-01\tB|x\t4.95\n2026-03-02\t<b>&\"q\"\t7.00\n2026-03-02\tA-1\t3.75\n2026-03-03\tA-2\t0.50\n2026-03-03\tß\t10.00\n2026-03-05\tA\t1.00\n2026-03-05\tB|x\t6.00\nTOTAL\t\t53.20\n"
+      }
+    },
+    {
+      "id": "s4-render-markdown",
+      "description": "render markdown matches the CLI",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "day",
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01",
+                "A-1"
+              ],
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "2026-03-01",
+                "B|x"
+              ],
+              "revenueCents": 495
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "<b>&\"q\""
+              ],
+              "revenueCents": 700
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "A-1"
+              ],
+              "revenueCents": 375
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "A-2"
+              ],
+              "revenueCents": 50
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "ß"
+              ],
+              "revenueCents": 1000
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "A"
+              ],
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "B|x"
+              ],
+              "revenueCents": 600
+            }
+          ],
+          "totalCents": 5320
+        },
+        "markdown"
+      ],
+      "expect": {
+        "returns": "| day | sku | revenue |\n|---|---|---:|\n| 2026-03-01 | A-1 | 20.00 |\n| 2026-03-01 | B\\|x | 4.95 |\n| 2026-03-02 | <b>&\"q\" | 7.00 |\n| 2026-03-02 | A-1 | 3.75 |\n| 2026-03-03 | A-2 | 0.50 |\n| 2026-03-03 | ß | 10.00 |\n| 2026-03-05 | A | 1.00 |\n| 2026-03-05 | B\\|x | 6.00 |\n| TOTAL |  | 53.20 |\n"
+      }
+    },
+    {
+      "id": "s4-render-html",
+      "description": "render html matches the CLI",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "day",
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01",
+                "A-1"
+              ],
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "2026-03-01",
+                "B|x"
+              ],
+              "revenueCents": 495
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "<b>&\"q\""
+              ],
+              "revenueCents": 700
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "A-1"
+              ],
+              "revenueCents": 375
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "A-2"
+              ],
+              "revenueCents": 50
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "ß"
+              ],
+              "revenueCents": 1000
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "A"
+              ],
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "B|x"
+              ],
+              "revenueCents": 600
+            }
+          ],
+          "totalCents": 5320
+        },
+        "html"
+      ],
+      "expect": {
+        "returns": "<table>\n<thead>\n<tr><th>day</th><th>sku</th><th>revenue</th></tr>\n</thead>\n<tbody>\n<tr><td>2026-03-01</td><td>A-1</td><td>20.00</td></tr>\n<tr><td>2026-03-01</td><td>B|x</td><td>4.95</td></tr>\n<tr><td>2026-03-02</td><td>&lt;b&gt;&amp;&quot;q&quot;</td><td>7.00</td></tr>\n<tr><td>2026-03-02</td><td>A-1</td><td>3.75</td></tr>\n<tr><td>2026-03-03</td><td>A-2</td><td>0.50</td></tr>\n<tr><td>2026-03-03</td><td>ß</td><td>10.00</td></tr>\n<tr><td>2026-03-05</td><td>A</td><td>1.00</td></tr>\n<tr><td>2026-03-05</td><td>B|x</td><td>6.00</td></tr>\n</tbody>\n<tfoot>\n<tr><td>TOTAL</td><td></td><td>53.20</td></tr>\n</tfoot>\n</table>\n"
+      }
+    },
+    {
+      "id": "s4-render-json",
+      "description": "render json matches the CLI",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "day",
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01",
+                "A-1"
+              ],
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "2026-03-01",
+                "B|x"
+              ],
+              "revenueCents": 495
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "<b>&\"q\""
+              ],
+              "revenueCents": 700
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "A-1"
+              ],
+              "revenueCents": 375
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "A-2"
+              ],
+              "revenueCents": 50
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "ß"
+              ],
+              "revenueCents": 1000
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "A"
+              ],
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "B|x"
+              ],
+              "revenueCents": 600
+            }
+          ],
+          "totalCents": 5320
+        },
+        "json"
+      ],
+      "expect": {
+        "returns": "{\"groupBy\":[\"day\",\"sku\"],\"rows\":[{\"key\":[\"2026-03-01\",\"A-1\"],\"revenue\":\"20.00\"},{\"key\":[\"2026-03-01\",\"B|x\"],\"revenue\":\"4.95\"},{\"key\":[\"2026-03-02\",\"<b>&\\\"q\\\"\"],\"revenue\":\"7.00\"},{\"key\":[\"2026-03-02\",\"A-1\"],\"revenue\":\"3.75\"},{\"key\":[\"2026-03-03\",\"A-2\"],\"revenue\":\"0.50\"},{\"key\":[\"2026-03-03\",\"ß\"],\"revenue\":\"10.00\"},{\"key\":[\"2026-03-05\",\"A\"],\"revenue\":\"1.00\"},{\"key\":[\"2026-03-05\",\"B|x\"],\"revenue\":\"6.00\"}],\"total\":\"53.20\"}\n"
+      }
+    },
+    {
+      "id": "s4-render-empty-json",
+      "description": "render with no rows",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "day"
+          ],
+          "rows": [],
+          "totalCents": 0
+        },
+        "json"
+      ],
+      "expect": {
+        "returns": "{\"groupBy\":[\"day\"],\"rows\":[],\"total\":\"0.00\"}\n"
+      }
+    },
+    {
+      "id": "s4-render-type-format",
+      "description": "Unknown format",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "day",
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01",
+                "A-1"
+              ],
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "2026-03-01",
+                "B|x"
+              ],
+              "revenueCents": 495
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "<b>&\"q\""
+              ],
+              "revenueCents": 700
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "A-1"
+              ],
+              "revenueCents": 375
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "A-2"
+              ],
+              "revenueCents": 50
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "ß"
+              ],
+              "revenueCents": 1000
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "A"
+              ],
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "B|x"
+              ],
+              "revenueCents": 600
+            }
+          ],
+          "totalCents": 5320
+        },
+        "csv"
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-render-type-missing",
+      "description": "No format",
+      "call": "render",
+      "args": [
+        {
+          "groupBy": [
+            "day",
+            "sku"
+          ],
+          "rows": [
+            {
+              "key": [
+                "2026-03-01",
+                "A-1"
+              ],
+              "revenueCents": 2000
+            },
+            {
+              "key": [
+                "2026-03-01",
+                "B|x"
+              ],
+              "revenueCents": 495
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "<b>&\"q\""
+              ],
+              "revenueCents": 700
+            },
+            {
+              "key": [
+                "2026-03-02",
+                "A-1"
+              ],
+              "revenueCents": 375
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "A-2"
+              ],
+              "revenueCents": 50
+            },
+            {
+              "key": [
+                "2026-03-03",
+                "ß"
+              ],
+              "revenueCents": 1000
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "A"
+              ],
+              "revenueCents": 100
+            },
+            {
+              "key": [
+                "2026-03-05",
+                "B|x"
+              ],
+              "revenueCents": 600
+            }
+          ],
+          "totalCents": 5320
+        }
+      ],
+      "expect": {
+        "throws": "TypeError"
+      }
+    },
+    {
+      "id": "s4-pipeline-markdown",
+      "description": "read, aggregate, render",
+      "call": "pipeline",
+      "args": [
+        {
+          "path": "orders.csv"
+        },
+        {
+          "groupBy": [
+            "day",
+            "sku"
+          ]
+        },
+        "markdown"
+      ],
+      "expect": {
+        "returns": "| day | sku | revenue |\n|---|---|---:|\n| 2026-03-01 | A-1 | 20.00 |\n| 2026-03-01 | B\\|x | 4.95 |\n| 2026-03-02 | <b>&\"q\" | 7.00 |\n| 2026-03-02 | A-1 | 3.75 |\n| 2026-03-03 | A-2 | 0.50 |\n| 2026-03-03 | ß | 10.00 |\n| 2026-03-05 | A | 1.00 |\n| 2026-03-05 | B\\|x | 6.00 |\n| TOTAL |  | 53.20 |\n"
+      }
+    },
+    {
+      "id": "s4-pipeline-json-three",
+      "description": "JSON input, three keys",
+      "call": "pipeline",
+      "args": [
+        {
+          "path": "orders.json"
+        },
+        {
+          "groupBy": [
+            "customer",
+            "day",
+            "sku"
+          ]
+        },
+        "json"
+      ],
+      "expect": {
+        "returns": "{\"groupBy\":[\"customer\",\"day\",\"sku\"],\"rows\":[{\"key\":[\"C'3\",\"2026-03-02\",\"<b>&\\\"q\\\"\"],\"revenue\":\"7.00\"},{\"key\":[\"C1\",\"2026-03-01\",\"A-1\"],\"revenue\":\"20.00\"},{\"key\":[\"C1\",\"2026-03-02\",\"A-1\"],\"revenue\":\"3.75\"},{\"key\":[\"C1\",\"2026-03-03\",\"ß\"],\"revenue\":\"10.00\"},{\"key\":[\"C1\",\"2026-03-05\",\"A\"],\"revenue\":\"1.00\"},{\"key\":[\"C2\",\"2026-03-01\",\"B|x\"],\"revenue\":\"4.95\"},{\"key\":[\"C2\",\"2026-03-03\",\"A-2\"],\"revenue\":\"0.50\"},{\"key\":[\"C2\",\"2026-03-05\",\"B|x\"],\"revenue\":\"6.00\"}],\"total\":\"53.20\"}\n"
+      }
+    }
+  ]
+}

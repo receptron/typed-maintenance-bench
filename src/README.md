@@ -16,6 +16,7 @@ yarn summarize [--repeats r2,r3,r4]   # one table row per arm, mode and stage, f
 | File | Job |
 |---|---|
 | `cases.ts`, `caseRunner.ts` | Case format, judging, running a case directory. Node built-ins only: copied into the agent's tree as the visible-test runner |
+| `apiCases.ts`, `apiRunner.ts`, `apiWorker.ts` | The same for API cases (stage 4 on): each case runs in its own process, which imports the arm's library entry, makes the call and reports the result, an error, or a change to the arguments. Node built-ins only; copied into the tree too |
 | `arms.ts` | Each arm's template, build, verify and run commands, and the notes inserted into the task |
 | `tree.ts` | Build a work tree outside this repository: template, previous stage (cumulative) or reference (reset), visible tests, `TASK.md`, `yarn install`, a git baseline |
 | `agents.ts` | `claude` (the agent under test) and `reference` (copies the reference implementation; for testing the harness) |

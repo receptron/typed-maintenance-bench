@@ -1,0 +1,24 @@
+{
+  "cases": [
+    {
+      "id": "s4-visible-cli",
+      "description": "The CLI keeps working",
+      "args": [
+        "--input",
+        "orders.csv",
+        "--group-by",
+        "day,sku",
+        "--output",
+        "markdown"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdout": "| day | sku | revenue |\n|---|---|---:|\n| 2026-03-01 | A-1 | 20.00 |\n| 2026-03-01 | B\\|x | 4.95 |\n| 2026-03-02 | <b>&\"q\" | 7.00 |\n| 2026-03-02 | A-1 | 3.75 |\n| 2026-03-03 | A-2 | 0.50 |\n| 2026-03-03 | ß | 10.00 |\n| 2026-03-05 | A | 1.00 |\n| 2026-03-05 | B\\|x | 6.00 |\n| TOTAL |  | 53.20 |\n",
+        "stderrPrefixes": [
+          "orders.csv:8:",
+          "orders.csv:9:"
+        ]
+      }
+    }
+  ]
+}
